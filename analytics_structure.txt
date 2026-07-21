@@ -1,0 +1,388 @@
+ERPForge/
+├── command_repo/                    # ОСНОВНОЙ РЕПОЗИТОРИЙ: Архитектура, документация, контракты
+│   ├── .github/workflows/           # CI/CD АВТОМАТИЗАЦИЯ (GitHub Actions)
+│   │   ├── ssg-docs-pipeline.yml    # Пайплайн сборки документации и C4-схем на GitHub Pages
+│   │   ├── frontend-build.yml       # Сборка Web, Admin, Tauri (Mobile/Desktop) + White Label сборщик
+│   │   ├── backend-tests.yml        # Тесты Rust (Kernel), Python (FastAPI) + Schemathesis + OWASP ZAP
+│   │   └── infra-deploy.yml         # Авто-релиз инфраструктуры через Terraform
+│   │
+│   ├── system/                      # DOCS: Стратегия и верхнеуровневый дизайн
+│   │   ├── vision.md                # Бизнес-стратегия, Roadmap релиза, анализ рынка и планы капитализации
+│   │   └── architecture.dsl         # [Structurizr] Сквозная C4 модель (Бэкенд, Фронтенд, Инфраструктура)
+│   │
+│   ├── 01_frontend/                 # FRONTEND СЛОЙ (React + Tauri)
+│   │   ├── web_client/              # Основное Web-SPA приложение для клиентов ERP
+│   │   ├── admin_portal/            # Панель администратора (Управление тарифами, биллингом, лимитами)
+│   │   ├── mobile_tauri/            # Кроссплатформенный мобильный клиент (Tauri Mobile под Android/iOS)
+│   │   └── white_label_config/      # [ White Label ] Манифесты кастомизации (Логотипы, цвета, брендинг под заказчика)
+│   │
+│   ├── 02_backend/                  # BACKEND СЛОЙ (Макросервисы)
+│   │   ├── api_gateway/             # [ Gateway ] Единая точка входа (Маршрутизация, Rate Limiting, JWT-валидация)
+│   │   ├── rust_kernel/             # [ Rust ] Тяжелое транзакционное ядро, СУБД-прослойка, Audit Log движок
+│   │   └── python_services/         # [ Python ] Макросервисы на FastAPI (Бизнес-логика, CRM, HR, Налоги)
+│   │
+│   ├── 03_domain/                   # БИЗНЕС-КОНТЕКСТЫ (15 контекстов с приоритетами)
+│   │   ├── shared_kernel/           # [TypeSpec] Базовые типы (Валюты, Ед. измерения, Ставки НДС)
+│   │   │   └── base_types.tsp
+│   │   │
+│   │   ├── 01_security_iam/         # IAM: Пользователи, Роли, Разрешения, 2FA, SSO
+│   │   │   ├── registries/
+│   │   │   │   ├── users.yaml
+│   │   │   │   ├── roles.yaml
+│   │   │   │   ├── permissions.yaml
+│   │   │   │   └── tenants.yaml
+│   │   │   ├── commands/
+│   │   │   │   ├── Login.yaml
+│   │   │   │   ├── Logout.yaml
+│   │   │   │   ├── AssignRole.yaml
+│   │   │   │   └── SetTenant.yaml
+│   │   │   ├── events/
+│   │   │   │   ├── UserLoggedIn.yaml
+│   │   │   │   ├── UserLoggedOut.yaml
+│   │   │   │   └── RoleAssigned.yaml
+│   │   │   └── policies/
+│   │   │       ├── rbac_policy.yaml
+│   │   │       └── password_policy.yaml
+│   │   │
+│   │   ├── 02_audit_log/            # АУДИТ: Полный лог всех действий (Для налоговой)
+│   │   │   ├── registries/
+│   │   │   │   └── audit_events.yaml
+│   │   │   ├── commands/
+│   │   │   │   └── LogAuditEvent.yaml
+│   │   │   ├── events/
+│   │   │   │   └── AuditLogged.yaml
+│   │   │   └── queries/
+│   │   │       ├── GetAuditTrail.yaml
+│   │   │       └── GetAuditReport.yaml
+│   │   │
+│   │   ├── 03_billing_subscriptions/# БИЛЛИНГ: Подписки, платежи, тарифы (Stripe/ЮKassa)
+│   │   │   ├── registries/
+│   │   │   │   ├── plans.yaml
+│   │   │   │   ├── subscriptions.yaml
+│   │   │   │   └── invoices.yaml
+│   │   │   ├── commands/
+│   │   │   │   ├── CreateSubscription.yaml
+│   │   │   │   ├── CancelSubscription.yaml
+│   │   │   │   ├── UpgradePlan.yaml
+│   │   │   │   └── ProcessPayment.yaml
+│   │   │   ├── events/
+│   │   │   │   ├── SubscriptionCreated.yaml
+│   │   │   │   ├── SubscriptionCanceled.yaml
+│   │   │   │   ├── PaymentSuccess.yaml
+│   │   │   │   └── PaymentFailed.yaml
+│   │   │   └── queries/
+│   │   │       ├── GetSubscriptionStatus.yaml
+│   │   │       └── GetBillingHistory.yaml
+│   │   │
+│   │   ├── 04_financial_accounting/ # УЧЕТ: Документы, Проводки, Регистры (Ядро ERP)
+│   │   │   ├── registries/
+│   │   │   │   ├── counterparty.yaml
+│   │   │   │   └── nomenclature.yaml
+│   │   │   ├── documents/
+│   │   │   │   ├── SalesInvoice.yaml
+│   │   │   │   └── PaymentOrder.yaml
+│   │   │   ├── registers/
+│   │   │   │   ├── ledger_entries.yaml
+│   │   │   │   └── stock_balances.yaml
+│   │   │   ├── commands/
+│   │   │   │   ├── PostDocument.yaml
+│   │   │   │   └── CancelPosting.yaml
+│   │   │   └── events/
+│   │   │       ├── DocumentPosted.yaml
+│   │   │       └── LedgerMoved.yaml
+│   │   │
+│   │   ├── 05_enterprises/          # МУЛЬТИЮРЛИЦА: ООО, ИП, Холдинги, Учетные политики
+│   │   │   ├── registries/
+│   │   │   │   └── legal_entities.yaml
+│   │   │   ├── commands/
+│   │   │   │   ├── CreateEnterprise.yaml
+│   │   │   │   └── SetTaxPolicy.yaml
+│   │   │   └── events/
+│   │   │       └── EnterpriseCreated.yaml
+│   │   │
+│   │   ├── 06_tax_accounting/       # НАЛОГИ: УСН, ОСНО, НДС, КДИР, Декларации
+│   │   │   ├── registries/
+│   │   │   │   ├── tax_rates.yaml
+│   │   │   │   └── tax_periods.yaml
+│   │   │   ├── documents/
+│   │   │   │   ├── TaxDeclaration.yaml
+│   │   │   │   └── KDIR.yaml
+│   │   │   ├── registers/
+│   │   │   │   ├── tax_liability.yaml
+│   │   │   │   └── tax_credit.yaml
+│   │   │   ├── commands/
+│   │   │   │   ├── CalculateTax.yaml
+│   │   │   │   └── SubmitDeclaration.yaml
+│   │   │   └── events/
+│   │   │       ├── TaxCalculated.yaml
+│   │   │       └── TaxPaid.yaml
+│   │   │
+│   │   ├── 07_crm_and_sales/        # CRM: Лиды, Сделки, Воронки, Коммерческие предложения
+│   │   │   ├── registries/
+│   │   │   │   ├── leads.yaml
+│   │   │   │   ├── opportunities.yaml
+│   │   │   │   └── contact_history.yaml
+│   │   │   ├── documents/
+│   │   │   │   ├── CommercialOffer.yaml
+│   │   │   │   └── Contract.yaml
+│   │   │   ├── commands/
+│   │   │   │   ├── CreateLead.yaml
+│   │   │   │   ├── ConvertLeadToOpportunity.yaml
+│   │   │   │   └── CloseDeal.yaml
+│   │   │   ├── events/
+│   │   │   │   ├── LeadCreated.yaml
+│   │   │   │   ├── DealWon.yaml
+│   │   │   │   └── DealLost.yaml
+│   │   │   └── pipelines/
+│   │   │       ├── sales_funnel.yaml
+│   │   │       └── conversion_rates.yaml
+│   │   │
+│   │   ├── 08_hrm_and_payroll/      # HRM: Сотрудники, Табели, ФОТ, Зарплата
+│   │   │   ├── registries/
+│   │   │   │   ├── employees.yaml
+│   │   │   │   ├── positions.yaml
+│   │   │   │   └── departments.yaml
+│   │   │   ├── documents/
+│   │   │   │   ├── Timesheet.yaml
+│   │   │   │   ├── Payroll.yaml
+│   │   │   │   └── Vacation.yaml
+│   │   │   ├── registers/
+│   │   │   │   ├── salary_register.yaml
+│   │   │   │   └── staff_register.yaml
+│   │   │   ├── commands/
+│   │   │   │   ├── HireEmployee.yaml
+│   │   │   │   ├── FireEmployee.yaml
+│   │   │   │   └── CalculatePayroll.yaml
+│   │   │   └── events/
+│   │   │       ├── EmployeeHired.yaml
+│   │   │       ├── EmployeeFired.yaml
+│   │   │       └── SalaryCalculated.yaml
+│   │   │
+│   │   ├── 09_product_analysis/     # АНАЛИТИКА: Юнит-экономика, COGS, Маржинальность
+│   │   │   ├── commands/
+│   │   │   │   ├── CalculateCOGS.yaml
+│   │   │   │   └── RunUnitAnalysis.yaml
+│   │   │   ├── events/
+│   │   │   │   ├── CostOfGoodsCalculated.yaml
+│   │   │   │   └── MarginDroppedAlert.yaml
+│   │   │   ├── queries/
+│   │   │   │   ├── GetProductMargin.yaml
+│   │   │   │   ├── GetUnitEconomics.yaml
+│   │   │   │   └── GetCustomerLTV.yaml
+│   │   │   ├── projections/
+│   │   │   │   ├── product_margin_view.yaml
+│   │   │   │   └── customer_ltv_view.yaml
+│   │   │   └── uniteconomy/
+│   │   │       ├── calculators/
+│   │   │       │   ├── margin_calculator.yaml
+│   │   │       │   ├── ltv_calculator.yaml
+│   │   │       │   └── cac_calculator.yaml
+│   │   │       ├── scenarios/
+│   │   │       │   ├── price_change.yaml
+│   │   │       │   └── cac_change.yaml
+│   │   │       └── benchmarks/
+│   │   │           ├── industry_benchmarks.yaml
+│   │   │           └── kpi_targets.yaml
+│   │   │
+│   │   ├── 10_integrations/         # ИНТЕГРАЦИИ: 1С, Банки, Маркетплейсы, Webhooks
+│   │   │   ├── registries/
+│   │   │   │   ├── connectors.yaml
+│   │   │   │   └── webhooks.yaml
+│   │   │   ├── connectors/
+│   │   │   │   ├── bank_1c.yaml
+│   │   │   │   ├── bank_sber.yaml
+│   │   │   │   ├── marketplaces/
+│   │   │   │   │   ├── ozon.yaml
+│   │   │   │   │   ├── wildberries.yaml
+│   │   │   │   │   └── yandex_market.yaml
+│   │   │   │   └── accounting_systems/
+│   │   │   │       └── moysklad.yaml
+│   │   │   ├── commands/
+│   │   │   │   ├── SyncWithBank.yaml
+│   │   │   │   └── ExportTo1C.yaml
+│   │   │   └── events/
+│   │   │       ├── BankSyncCompleted.yaml
+│   │   │       └── IntegrationFailed.yaml
+│   │   │
+│   │   ├── 11_reporting_engine/     # ОТЧЕТЫ: Прибыли/убытки, Баланс, CashFlow, Управленка
+│   │   │   ├── registries/
+│   │   │   │   ├── report_templates.yaml
+│   │   │   │   └── report_schedules.yaml
+│   │   │   ├── queries/
+│   │   │   │   ├── ProfitAndLoss.yaml
+│   │   │   │   ├── BalanceSheet.yaml
+│   │   │   │   ├── CashFlow.yaml
+│   │   │   │   └── ManagementReport.yaml
+│   │   │   └── commands/
+│   │   │       ├── GenerateReport.yaml
+│   │   │       └── ExportToExcel.yaml
+│   │   │
+│   │   ├── 12_notifications/        # УВЕДОМЛЕНИЯ: Email, SMS, Telegram, WebSocket
+│   │   │   ├── registries/
+│   │   │   │   ├── notification_templates.yaml
+│   │   │   │   └── notification_preferences.yaml
+│   │   │   ├── channels/
+│   │   │   │   ├── email.yaml
+│   │   │   │   ├── sms.yaml
+│   │   │   │   ├── telegram.yaml
+│   │   │   │   └── websocket.yaml
+│   │   │   ├── commands/
+│   │   │   │   └── SendNotification.yaml
+│   │   │   └── events/
+│   │   │       └── NotificationSent.yaml
+│   │   │
+│   │   ├── 13_workflow_engine/      # БИЗНЕС-ПРОЦЕССЫ: Согласования, Задачи, Маршруты
+│   │   │   ├── registries/
+│   │   │   │   ├── workflows.yaml
+│   │   │   │   └── tasks.yaml
+│   │   │   ├── commands/
+│   │   │   │   ├── StartWorkflow.yaml
+│   │   │   │   ├── ApproveTask.yaml
+│   │   │   │   └── RejectTask.yaml
+│   │   │   └── events/
+│   │   │       ├── WorkflowStarted.yaml
+│   │   │       └── TaskCompleted.yaml
+│   │   │
+│   │   ├── 14_data_migration/       # МИГРАЦИЯ: Инструменты перехода с 1С/SAP
+│   │   │   ├── mappings/
+│   │   │   │   ├── 1c_entities.yaml
+│   │   │   │   └── sap_entities.yaml
+│   │   │   ├── commands/
+│   │   │   │   ├── ImportFrom1C.yaml
+│   │   │   │   └── ValidateData.yaml
+│   │   │   └── reports/
+│   │   │       └── migration_report.yaml
+│   │   │
+│   │   └── 15_ai_assistant/         # AI: Нейросети для ERP (Чат-бот, Прогнозы, Автозаполнение)
+│   │       ├── models/
+│   │       │   ├── chat_bot.yaml
+│   │       │   ├── auto_complete.yaml
+│   │       │   └── forecast.yaml
+│   │       ├── prompts/
+│   │       │   ├── accounting.yaml
+│   │       │   └── analytics.yaml
+│   │       └── events/
+│   │           └── AIResponseGenerated.yaml
+│   │
+│   ├── 04_analytics/                # ANALYTICS СЛОЙ (Data Science & ML)
+│   │   ├── product_metrics/         # CQRS проекции для продуктовой аналитики (CAC, LTV, Churn, Когорты)
+│   │   ├── business_bi/             # Скрипты агрегации данных для финансовой аналитики и BI-витрин
+│   │   └── ml_models/               # [ ML ] Модели предиктивной аналитики (Прогноз падения маржи, детект фрода)
+│   │
+│   ├── 05_infrastructure/           # INFRASTRUCTURE СЛОЙ (IaC & DevOps)
+│   │   ├── terraform/               # [ Terraform ] Скрипты развертывания облачной инфраструктуры
+│   │   ├── k8s/                     # [ K8s ] Манифесты Kubernetes (Deployments, Services, Ingress, Auto-scaling)
+│   │   ├── monitoring/              # [ Monitoring / Tracing / Logging ] Конфиги Prometheus, Grafana, OpenTelemetry
+│   │   ├── backup_strategies/       # [ Backup ] Скрипты автоматического резервного копирования БД
+│   │   └── cdn/                     # [ CDN ] Настройки кэширования статики для высокой доступности
+│   │
+│   ├── 06_security_compliance/      # SECURITY & COMPLIANCE СЛОЙ
+│   │   ├── encryption/              # [ Encryption ] Спецификации шифрования данных (At Rest / In Transit)
+│   │   ├── gdpr_compliance/         # [ GDPR / ФЗ-152 ] Регламенты очистки и маскирования персональных данных
+│   │   └── pentest_suites/          # [ Pentests ] Сценарии для автоматизированного сканирования уязвимостей
+│   │
+│   ├── 07_support_ops/              # SUPPORT СЛОЙ (Операционка и клиентский сервис)
+│   │   ├── helpdesk_integrations/   # [ Helpdesk / Chat ] Коннекторы к тикет-системам и чатам поддержки
+│   │   └── knowledge_base_templates/# [ KB ] Базовые шаблоны ответов для первой линии поддержки
+│   │
+│   ├── 08_contracts/                # CONTRACTS (TypeSpec Интерфейсы)
+│   │   ├── web_api/
+│   │   │   ├── main.tsp
+│   │   │   └── generated/
+│   │   │       └── openapi.yaml
+│   │   └── async_bus/
+│   │       ├── events.tsp
+│   │       └── generated/
+│   │           ├── asyncapi.yaml
+│   │           └── protobuf/
+│   │
+│   ├── 09_testing/                  # TESTING СЛОЙ (Конвейер качества)
+│   │   ├── karate/                  # E2E Автотесты бизнес-сценариев
+│   │   │   ├── features/
+│   │   │   │   ├── enterprise_setup.feature
+│   │   │   │   └── unit_economy_flow.feature
+│   │   │   └── karate-config.js
+│   │   └── schemathesis/            # Property-Based контрактное тестирование
+│   │       ├── tests/
+│   │       │   └── test_api.py
+│   │       └── config.yaml
+│   │
+│   ├── 10_configuration_layer/      # WORKFLOW & META (Слой кастомизации внедренцами)
+│   │   ├── meta_manifests/          # JSON-схемы для Dynamic UI в React
+│   │   │   ├── document.json
+│   │   │   └── report.json
+│   │   ├── dsl_specs/               # Грамматика для 3-х конфигурационных языков
+│   │   └── tenant_settings/         # Настройки для каждого клиента
+│   │       ├── default.json
+│   │       └── custom/
+│   │
+│   └── 11_docs_portal/              # DOCS: Портал документации (MkDocs + Kroki)
+│       ├── mkdocs.yml               # Конфигурация единой базы знаний проекта
+│       └── docs/
+│           ├── user_manual/         # [ User Docs ] Инструкции для конечных пользователей ERP
+│           │   ├── getting_started.md
+│           │   ├── video_tutorials.md
+│           │   └── faq.md
+│           ├── developer_guide/     # [ Dev Docs ] Руководство по архитектуре и расширению системы
+│           │   ├── architecture.md
+│           │   ├── api_reference.md
+│           │   └── contributing.md
+│           ├── admin_guide/         # [ Admin Docs ] Инструкция по развертыванию и настройке лимитов
+│           │   ├── deployment.md
+│           │   ├── backup.md
+│           │   └── troubleshooting.md
+│           ├── migration_guide/     # Гайд по переходу с 1С/SAP
+│           │   ├── 1c_migration.md
+│           │   └── data_validation.md
+│           ├── changelog.md         # [ Changelog ] История изменений и версионирование продукта
+│           └── roadmap.md           # [ Roadmap ] Публичный план развития системы
+│
+├── code_repo/                       # КОД: Исходники приложения (Rust, Python, TypeScript)
+│   ├── backend/
+│   │   ├── rust_kernel/
+│   │   │   ├── src/
+│   │   │   ├── Cargo.toml
+│   │   │   └── tests/
+│   │   └── python_services/
+│   │       ├── app/
+│   │       ├── requirements.txt
+│   │       └── Dockerfile
+│   │
+│   ├── frontend/
+│   │   ├── web_client/
+│   │   │   ├── src/
+│   │   │   └── package.json
+│   │   ├── admin_portal/
+│   │   ├── mobile_tauri/
+│   │   └── white_label_config/
+│   │
+│   └── shared/
+│       ├── contracts/               # Сгенерированные из command_repo
+│       └── types/
+│
+├── infrastructure_repo/             # INFRA: IaC и DevOps конфигурации
+│   ├── terraform/
+│   │   ├── main.tf
+│   │   ├── variables.tf
+│   │   └── outputs.tf
+│   ├── k8s/
+│   │   ├── deployment.yaml
+│   │   └── service.yaml
+│   ├── monitoring/
+│   │   ├── prometheus.yaml
+│   │   └── grafana/
+│   └── backup/
+│       └── backup.sh
+│
+├── docs_repo/                       # DOCS: Полная документация
+│   ├── mkdocs.yml
+│   └── docs/
+│       ├── user_manual/
+│       ├── developer_guide/
+│       ├── admin_guide/
+│       ├── migration_guide/
+│       ├── changelog.md
+│       └── roadmap.md
+├──system_structure.txt 
+├──code_structure.txt 
+└──analytics_structure.txt 

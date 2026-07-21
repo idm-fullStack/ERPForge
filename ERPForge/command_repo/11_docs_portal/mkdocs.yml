@@ -1,0 +1,73 @@
+site_name: "ERPForge Ecosystem"
+site_url: "https://github.io"
+site_description: "База знаний масштабно-инвариантной событийно-ориентированной ERP платформы"
+site_author: "Инди-хакер / Главный Архитектор"
+
+theme:
+  name: material
+  language: ru   # Полная русификация поиска, кнопок и интерфейса
+  logo: material/fountain-pen-tip
+  icon:
+    repo: fontawesome/brands/github
+  palette:
+    # Автоматическое переключение тем Темная/Светлая
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: teal
+      accent: cyan
+      toggle:
+        icon: material/brightness-4
+        name: Перейти на светлую тему
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: teal
+      accent: cyan
+      toggle:
+        icon: material/brightness-7
+        name: Перейти на тёмную тему
+  features:
+    - navigation.tabs       # Главные разделы в виде верхних вкладок
+    - navigation.sections   # Группировка макросервисов в боковой панели
+    - navigation.expand     # Автоматическое раскрытие подразделов меню
+    - navigation.top        # Кнопка быстрой прокрутки наверх (удобно для телефонов)
+    - code.copy             # Кнопка копирования кода для разработчиков
+
+plugins:
+  - search
+  # Автоматический рендеринг схем C4 без нагрузки 
+  - kroki:
+      ServerUrl: https://kroki.io
+      FileType: svg
+      DownloadImages: false
+
+markdown_extensions:
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!code pymdownx.superfences.mermaid
+        - name: plantuml
+          class: plantuml
+          format: !!code pymdownx.superfences.mermaid
+  - tables # Поддержка сложных аналитических таблиц для юнит-экономики
+
+nav:
+  - ' Концепция': 'index.md'
+  - ' Бизнес-стратегия':
+    - 'Тарифная модель (5k/10k)': 'business_strategy/saas_pricing_model.md'
+    - 'On-Premise Экономика': 'business_strategy/on_premise_economics.md'
+  - ' Архитектура (C4 Model)': 'system/architecture.md'
+  - ' Макросервисы':
+    - '01 IAM & Security': 'contexts/01_security_iam.md'
+    - '02 Лог Аудита': 'contexts/02_audit_log.md'
+    - '03 Биллинг и Лицензии': 'contexts/03_billing_subscriptions.md'
+    - '04 Бухгалтерский учет': 'contexts/04_financial_accounting.md'
+    - '09 Юнит-экономика': 'contexts/09_product_analysis_macro.md'
+  - ' API Контракты': 'contracts/web_api/generated/openapi.md'
+  - ' Тестирование и ИБ': 'testing/verification_guide.md'
