@@ -1,0 +1,174 @@
+# ============================================
+# Справочник: Счета и платежи (Invoices & Payments)
+# ============================================
+
+version: "1.0.0"
+type: registry
+name: "invoices"
+description: "История выставленных счетов и платежей"
+
+fields:
+  - id:
+      type: uuid
+      primary: true
+      description: "Уникальный идентификатор счета"
+      example: "ab0e8400-e29b-41d4-a716-446655440000"
+  
+  - tenant_id:
+      type: uuid
+      required: true
+      indexed: true
+      foreign_key: "tenants.id"
+      description: "ID клиента"
+  
+  - subscription_id:
+      type: uuid
+      required: true
+      foreign_key: "subscriptions.id"
+      description: "ID подписки"
+  
+  - invoice_number:
+      type: string
+      required: true
+      unique: true
+      description: "Номер счета (для клиента)"
+      example: "INV-2025-001"
+  
+  - amount:
+      type: integer
+      required: true
+      min: 0
+      description: "Сумма счета в копейках"
+      example: 500000
+  
+  - currency:
+      type: string
+      required: true
+      default: "RUB"
+      enum: ["RUB", "USD", "EUR"]
+  
+  - status:
+      type: string
+      required: true
+      indexed: true
+      enum: ["draft", "sent", "paid", "failed", "refunded", "overdue"]
+      description: "Статус счета"
+      example: "paid"
+  
+  - issued_at:
+      type: datetime
+      required: true
+      description: "Дата выставления"
+  
+  - due_date:
+      type: datetime
+      required: true
+      description: "Срок оплаты"
+  
+  - paid_at:
+      type: datetime
+      nullable: true
+      description: "Дата оплаты"
+  
+  - payment_method:
+      type: string
+      required: true
+      enum: ["card", "invoice", "crypto", "prepaid"]
+  
+  - payment_provider:
+      type: string
+      enum: ["stripe", "yookassa", "manual", "crypto"]
+  
+  - provider_transaction_id:
+      type: string
+      description: "ID транзакции в платежной системе"
+  
+  - items:
+      type: array
+      description: "Позиции счета"
+      items:
+        type: object
+        properties:
+          id: { type: string }
+          name: { type: string }
+          quantity: { type: integer }
+          unit_price: { type: integer }
+          amount: { type: integer }
+          vat_rate: { type: integer }
+          vat_amount: { type: integer }
+  
+  - vat_total:
+      type: integer
+      description: "Общая сумма НДС в копейках"
+  
+  - subtotal:
+      type: integer
+      description: "Сумма без НДС в копейках"
+  
+  - discount:
+      type: integer
+      default: 0
+      description: "Скидка в копейках"
+  
+  - discount_reason:
+      type: string
+      nullable: true
+      enum: ["early_payment", "annual_subscription", "promo_code", "referral"]
+      description: "Причина скидки"
+  
+  - promo_code:
+      type: string
+      nullable: true
+      description: "Промокод"
+  
+  - payment_link:
+      type: string
+      description: "Ссылка на оплату"
+  
+  - receipt_url:
+      type: string
+      description: "Ссылка на чек/квитанцию"
+  
+  - created_at:
+      type: datetime
+      default: "now()"
+  
+  - updated_at:
+      type: datetime
+      default: "now()"
+
+validations:
+  - condition: "status == 'paid'"
+    require: "paid_at is not null"
+    message: "Для оплаченного счета нужно указать дату оплаты"
+  
+  - condition: "status == 'overdue'"
+    require: "due_date < now() and status != 'paid'"
+    message: "Просроченный счет не оплачен"
+
+examples:
+  - id: "ab0e8400-e29b-41d4-a716-446655440000"
+    tenant_id: "660e8400-e29b-41d4-a716-446655440000"
+    subscription_id: "990e8400-e29b-41d4-a716-446655440000"
+    invoice_number: "INV-2025-001"
+    amount: 500000
+    currency: "RUB"
+    status: "paid"
+    issued_at: "2025-01-01T00:00:00Z"
+    due_date: "2025-01-15T00:00:00Z"
+    paid_at: "2025-01-01T10:00:00Z"
+    payment_method: "card"
+    payment_provider: "stripe"
+    provider_transaction_id: "txn_123456789"
+    items:
+      - id: "item-001"
+        name: "Подписка Базовый 5 000 ₽/мес (январь 2025)"
+        quantity: 1
+        unit_price: 500000
+        amount: 500000
+        vat_rate: 20
+        vat_amount: 83333
+    vat_total: 83333
+    subtotal: 416667
+    discount: 0
+    created_at: "2025-01-01T00:00:00Z"

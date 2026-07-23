@@ -1,0 +1,382 @@
+# ============================================
+# Справочник: Пользователи системы
+# IAM (Identity & Access Management)
+# ============================================
+# Описание: Хранит учетные записи всех пользователей ERPForge
+# Связан с: roles.yaml, tenants.yaml, audit_log
+# ============================================
+
+version: "1.0.0"
+type: registry
+name: "users"
+description: "Справочник пользователей ERPForge с поддержкой 2FA и SSO"
+
+fields:
+  - id:
+      type: uuid
+      description: "Уникальный идентификатор пользователя"
+      primary: true
+      indexed: true
+      example: "550e8400-e29b-41d4-a716-446655440000"
+  
+  - tenant_id:
+      type: uuid
+      description: "ID клиента (компании) в мультиарендной системе"
+      required: true
+      indexed: true
+      foreign_key: "tenants.id"
+      example: "660e8400-e29b-41d4-a716-446655440000"
+  
+  - email:
+      type: string
+      description: "Уникальный email пользователя (логин)"
+      required: true
+      unique: true
+      indexed: true
+      format: email
+      min_length: 5
+      max_length: 255
+      example: "ivan.petrov@company.ru"
+  
+  - password_hash:
+      type: string
+      description: "Хеш пароля (Argon2id)"
+      required: true
+      min_length: 60
+      max_length: 255
+      sensitive: true
+      example: "$argon2id$v=19$m=65536,t=3,p=4$c2FsdHlzYWx0$hash..."
+  
+  - salt:
+      type: string
+      description: "Соль для хеширования пароля"
+      sensitive: true
+      example: "randomsalt123456"
+  
+  - first_name:
+      type: string
+      description: "Имя пользователя"
+      max_length: 100
+      example: "Иван"
+  
+  - last_name:
+      type: string
+      description: "Фамилия пользователя"
+      max_length: 100
+      example: "Петров"
+  
+  - middle_name:
+      type: string
+      description: "Отчество пользователя (опционально)"
+      max_length: 100
+      required: false
+      example: "Сергеевич"
+  
+  - display_name:
+      type: string
+      description: "Отображаемое имя в интерфейсе"
+      max_length: 200
+      example: "Иван Петров"
+  
+  - phone:
+      type: string
+      description: "Номер телефона для 2FA и уведомлений"
+      format: phone
+      required: false
+      indexed: true
+      example: "+79001234567"
+  
+  - role_ids:
+      type: array
+      description: "Список ролей пользователя (RBAC)"
+      items:
+        type: uuid
+        foreign_key: "roles.id"
+      required: true
+      min_items: 1
+      example: ["770e8400-e29b-41d4-a716-446655440000"]
+  
+  - permissions_override:
+      type: array
+      description: "Индивидуальные разрешения (переопределяют роли)"
+      items:
+        type: object
+        properties:
+          resource: { type: string }
+          action: { type: string, enum: ["create", "read", "update", "delete", "execute"] }
+          scope: { type: string, enum: ["own", "tenant", "global"] }
+      required: false
+      example: |
+        - resource: "documents"
+          action: "delete"
+          scope: "tenant"
+  
+  - is_active:
+      type: boolean
+      description: "Активен ли пользователь"
+      default: true
+      indexed: true
+      example: true
+  
+  - is_locked:
+      type: boolean
+      description: "Заблокирован ли пользователь (после неудачных попыток)"
+      default: false
+      indexed: true
+      example: false
+  
+  - lock_reason:
+      type: string
+      description: "Причина блокировки"
+      required: false
+      enum: ["failed_attempts", "admin_action", "suspicious_activity", "expired_credentials"]
+      example: "failed_attempts"
+  
+  - last_login_at:
+      type: datetime
+      description: "Дата и время последнего успешного входа"
+      indexed: true
+      example: "2025-01-15T14:30:00Z"
+  
+  - last_login_ip:
+      type: string
+      description: "IP-адрес последнего входа"
+      format: ip
+      example: "192.168.1.100"
+  
+  - failed_login_attempts:
+      type: integer
+      description: "Количество неудачных попыток входа"
+      default: 0
+      min: 0
+      max: 99
+      example: 3
+  
+  - two_factor_enabled:
+      type: boolean
+      description: "Включена ли двухфакторная аутентификация"
+      default: false
+      example: true
+  
+  - two_factor_type:
+      type: string
+      description: "Тип 2FA"
+      required: false
+      enum: ["totp", "sms", "email", "webauthn"]
+      default: "totp"
+      example: "totp"
+  
+  - two_factor_secret:
+      type: string
+      description: "Секрет для TOTP (зашифрован)"
+      sensitive: true
+      required: false
+      example: "JBSWY3DPEHPK3PXP"
+  
+  - two_factor_backup_codes:
+      type: array
+      description: "Резервные коды для 2FA (хешированные)"
+      items:
+        type: string
+      sensitive: true
+      example: ["backup1", "backup2", "backup3"]
+  
+  - mfa_verified_at:
+      type: datetime
+      description: "Дата верификации 2FA"
+      required: false
+      example: "2025-01-10T10:00:00Z"
+  
+  - sso_provider:
+      type: string
+      description: "Провайдер SSO (если используется)"
+      required: false
+      enum: ["google", "github", "azure", "yandex", "custom"]
+      example: "google"
+  
+  - sso_external_id:
+      type: string
+      description: "ID пользователя в SSO-провайдере"
+      required: false
+      example: "1234567890"
+  
+  - preferences:
+      type: object
+      description: "Настройки интерфейса и уведомлений"
+      required: false
+      properties:
+        language:
+          type: string
+          enum: ["ru", "en", "kz"]
+          default: "ru"
+        timezone:
+          type: string
+          default: "Europe/Moscow"
+        notification_emails:
+          type: boolean
+          default: true
+        notification_sms:
+          type: boolean
+          default: false
+        notification_telegram:
+          type: boolean
+          default: false
+        theme:
+          type: string
+          enum: ["light", "dark", "system"]
+          default: "system"
+        dashboard_view:
+          type: string
+          default: "default"
+      example: |
+        language: "ru"
+        timezone: "Europe/Moscow"
+        notification_emails: true
+        theme: "dark"
+  
+  - metadata:
+      type: object
+      description: "Дополнительная мета-информация"
+      required: false
+      properties:
+        created_by:
+          type: uuid
+          description: "Кто создал пользователя"
+        updated_by:
+          type: uuid
+          description: "Кто последний обновлял"
+        department:
+          type: string
+          description: "Отдел"
+        position:
+          type: string
+          description: "Должность"
+      example: |
+        created_by: "admin"
+        department: "Бухгалтерия"
+        position: "Главный бухгалтер"
+  
+  - created_at:
+      type: datetime
+      description: "Дата создания"
+      required: true
+      default: "now()"
+      example: "2025-01-01T09:00:00Z"
+  
+  - updated_at:
+      type: datetime
+      description: "Дата последнего обновления"
+      required: true
+      default: "now()"
+      example: "2025-01-15T14:30:00Z"
+
+# ============================================
+# Валидационные правила
+# ============================================
+validations:
+  - condition: "two_factor_enabled == true"
+    require: "two_factor_secret is not null"
+    message: "При включении 2FA требуется секрет"
+  
+  - condition: "sso_provider is not null"
+    require: "sso_external_id is not null"
+    message: "При использовании SSO требуется external_id"
+  
+  - condition: "is_locked == true"
+    require: "lock_reason is not null"
+    message: "При блокировке требуется указать причину"
+
+# ============================================
+# Индексы для производительности
+# ============================================
+indexes:
+  - name: "idx_users_email"
+    fields: ["email"]
+    unique: true
+  
+  - name: "idx_users_tenant"
+    fields: ["tenant_id"]
+  
+  - name: "idx_users_active"
+    fields: ["is_active"]
+  
+  - name: "idx_users_locked"
+    fields: ["is_locked"]
+  
+  - name: "idx_users_last_login"
+    fields: ["last_login_at"]
+  
+  - name: "idx_users_tenant_active"
+    fields: ["tenant_id", "is_active"]
+    composite: true
+
+# ============================================
+# Примеры данных
+# ============================================
+examples:
+  - id: "550e8400-e29b-41d4-a716-446655440000"
+    tenant_id: "660e8400-e29b-41d4-a716-446655440000"
+    email: "admin@erpforge.com"
+    first_name: "Администратор"
+    last_name: "ERPForge"
+    display_name: "Главный администратор"
+    role_ids: ["770e8400-e29b-41d4-a716-446655440000"]
+    is_active: true
+    two_factor_enabled: true
+    preferences:
+      language: "ru"
+      theme: "dark"
+    created_at: "2025-01-01T09:00:00Z"
+
+  - id: "550e8400-e29b-41d4-a716-446655440001"
+    tenant_id: "660e8400-e29b-41d4-a716-446655440000"
+    email: "ivan.petrov@company.ru"
+    first_name: "Иван"
+    last_name: "Петров"
+    display_name: "Иван Петров"
+    role_ids: ["770e8400-e29b-41d4-a716-446655440001"]
+    is_active: true
+    two_factor_enabled: false
+    preferences:
+      language: "ru"
+      theme: "system"
+    created_at: "2025-01-02T10:00:00Z"
+
+  - id: "550e8400-e29b-41d4-a716-446655440002"
+    tenant_id: "660e8400-e29b-41d4-a716-446655440001"
+    email: "accountant@company.ru"
+    first_name: "Елена"
+    last_name: "Смирнова"
+    display_name: "Елена Смирнова"
+    role_ids: ["770e8400-e29b-41d4-a716-446655440002"]
+    is_active: true
+    two_factor_enabled: true
+    two_factor_type: "totp"
+    preferences:
+      language: "ru"
+      theme: "light"
+    created_at: "2025-01-03T11:00:00Z"
+
+# ============================================
+# Политики безопасности
+# ============================================
+security_policies:
+  password:
+    min_length: 12
+    require_uppercase: true
+    require_lowercase: true
+    require_numbers: true
+    require_special: true
+    max_age_days: 90
+    prevent_reuse: 5
+    lockout_attempts: 5
+    lockout_minutes: 30
+  
+  session:
+    max_lifetime_hours: 8
+    refresh_token_lifetime_days: 30
+    idle_timeout_minutes: 30
+  
+  two_factor:
+    require_for_roles: ["admin", "accountant"]
+    grace_period_days: 7

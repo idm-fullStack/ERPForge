@@ -1,0 +1,116 @@
+# ============================================
+# Справочник: Роли и разрешения
+# RBAC (Role-Based Access Control)
+# ============================================
+
+version: "1.0.0"
+type: registry
+name: "roles"
+description: "Справочник ролей для управления доступом"
+
+fields:
+  - id:
+      type: uuid
+      primary: true
+      description: "Уникальный идентификатор роли"
+  
+  - name:
+      type: string
+      required: true
+      unique: true
+      max_length: 100
+      description: "Кодовое имя роли"
+      example: "admin"
+  
+  - display_name:
+      type: string
+      required: true
+      max_length: 200
+      description: "Отображаемое название роли"
+      example: "Администратор"
+  
+  - description:
+      type: string
+      max_length: 500
+      description: "Описание роли"
+      example: "Полный доступ ко всем функциям системы"
+  
+  - permissions:
+      type: array
+      description: "Список разрешений для роли"
+      items:
+        type: object
+        properties:
+          resource: { type: string, required: true }
+          actions: { type: array, items: { type: string, enum: ["create", "read", "update", "delete", "execute"] } }
+          scope: { type: string, enum: ["own", "tenant", "global"], default: "tenant" }
+      required: true
+      example: |
+        - resource: "*"
+          actions: ["create", "read", "update", "delete"]
+          scope: "global"
+  
+  - is_system_role:
+      type: boolean
+      default: false
+      description: "Системная роль (нельзя удалить)"
+  
+  - created_at:
+      type: datetime
+      default: "now()"
+
+examples:
+  - id: "770e8400-e29b-41d4-a716-446655440000"
+    name: "admin"
+    display_name: "Администратор"
+    description: "Полный доступ ко всем функциям"
+    permissions:
+      - resource: "*"
+        actions: ["create", "read", "update", "delete", "execute"]
+        scope: "global"
+    is_system_role: true
+
+  - id: "770e8400-e29b-41d4-a716-446655440001"
+    name: "accountant"
+    display_name: "Бухгалтер"
+    description: "Доступ к финансовым документам и отчетам"
+    permissions:
+      - resource: "documents"
+        actions: ["create", "read", "update", "delete"]
+        scope: "tenant"
+      - resource: "reports"
+        actions: ["read", "execute"]
+        scope: "tenant"
+      - resource: "enterprises"
+        actions: ["read"]
+        scope: "tenant"
+    is_system_role: true
+
+  - id: "770e8400-e29b-41d4-a716-446655440002"
+    name: "manager"
+    display_name: "Руководитель"
+    description: "Доступ к отчетам и аналитике"
+    permissions:
+      - resource: "reports"
+        actions: ["read", "execute"]
+        scope: "tenant"
+      - resource: "analytics"
+        actions: ["read"]
+        scope: "tenant"
+      - resource: "documents"
+        actions: ["read"]
+        scope: "tenant"
+    is_system_role: true
+
+  - id: "770e8400-e29b-41d4-a716-446655440003"
+    name: "sales"
+    display_name: "Менеджер продаж"
+    description: "Доступ к CRM и клиентам"
+    permissions:
+      - resource: "crm"
+        actions: ["create", "read", "update"]
+        scope: "tenant"
+      - resource: "customers"
+        actions: ["create", "read", "update"]
+        scope: "tenant"
+    is_system_role: false

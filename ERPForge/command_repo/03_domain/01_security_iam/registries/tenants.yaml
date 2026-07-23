@@ -1,0 +1,57 @@
+# ============================================
+# Справочник: Клиенты (Tenants)
+# Мультиарендность SaaS
+# ============================================
+
+version: "1.0.0"
+type: registry
+name: "tenants"
+description: "Клиенты ERPForge в SaaS-модели"
+
+fields:
+  - id:
+      type: uuid
+      primary: true
+      description: "Уникальный идентификатор клиента"
+  
+  - name:
+      type: string
+      required: true
+      max_length: 200
+      description: "Название компании-клиента"
+      example: "ООО Ромашка"
+  
+  - subdomain:
+      type: string
+      required: true
+      unique: true
+      max_length: 50
+      description: "Поддомен для доступа (client.erpforge.com)"
+      example: "romashka"
+  
+  - status:
+      type: string
+      enum: ["active", "suspended", "trial", "expired"]
+      default: "trial"
+      description: "Статус клиента"
+  
+  - created_at:
+      type: datetime
+      default: "now()"
+  
+  - subscription:
+      type: object
+      properties:
+        tariff: { type: string, enum: ["Base_5k", "Pro_10k", "Custom"] }
+        valid_until: { type: datetime }
+        auto_renew: { type: boolean, default: true }
+
+examples:
+  - id: "660e8400-e29b-41d4-a716-446655440000"
+    name: "ООО Ромашка"
+    subdomain: "romashka"
+    status: "active"
+    subscription:
+      tariff: "Base_5k"
+      valid_until: "2026-12-31T23:59:59Z"
+      auto_renew: true

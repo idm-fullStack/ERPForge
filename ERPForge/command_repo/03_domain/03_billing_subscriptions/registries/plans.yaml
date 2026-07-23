@@ -1,0 +1,306 @@
+# ============================================
+# Справочник: Тарифные планы (Plans)
+# Монетизация SaaS-модели ERPForge
+# ============================================
+# Тарифы: Base_5k (Базовый) и Pro_10k (Про)
+# ============================================
+
+version: "1.0.0"
+type: registry
+name: "plans"
+description: "Тарифные планы ERPForge"
+
+fields:
+  - id:
+      type: uuid
+      primary: true
+      description: "Уникальный идентификатор тарифа"
+      example: "880e8400-e29b-41d4-a716-446655440000"
+  
+  - name:
+      type: string
+      required: true
+      unique: true
+      max_length: 50
+      description: "Кодовое название тарифа"
+      enum: ["BASE_5K", "PRO_10K", "ENTERPRISE"]
+      example: "BASE_5K"
+  
+  - display_name:
+      type: string
+      required: true
+      max_length: 100
+      description: "Отображаемое название"
+      example: "Базовый (5 000 ₽/мес)"
+  
+  - description:
+      type: string
+      max_length: 500
+      description: "Описание тарифа для клиентов"
+      example: "Для малого бизнеса до 10 сотрудников"
+  
+  - price_monthly:
+      type: integer
+      required: true
+      min: 0
+      description: "Цена за месяц в рублях"
+      example: 5000
+  
+  - price_annual:
+      type: integer
+      min: 0
+      description: "Цена за год со скидкой (рубли)"
+      example: 50000
+  
+  - currency:
+      type: string
+      required: true
+      default: "RUB"
+      enum: ["RUB", "USD", "EUR"]
+      description: "Валюта платежа"
+  
+  - features:
+      type: array
+      description: "Список функций в тарифе"
+      items:
+        type: object
+        properties:
+          id: { type: string }
+          name: { type: string }
+          included: { type: boolean }
+          limit: { type: integer, nullable: true }
+          unit: { type: string, nullable: true }
+      required: true
+      example: |
+        - id: "users"
+          name: "Пользователи"
+          included: true
+          limit: 5
+          unit: "шт"
+        - id: "documents"
+          name: "Документы в месяц"
+          included: true
+          limit: 1000
+          unit: "шт"
+        - id: "enterprises"
+          name: "Юридические лица"
+          included: true
+          limit: 1
+          unit: "шт"
+  
+  - limitations:
+      type: object
+      description: "Ограничения тарифа"
+      properties:
+        max_users: { type: integer, default: 5 }
+        max_enterprises: { type: integer, default: 1 }
+        max_documents_month: { type: integer, default: 1000 }
+        max_storage_gb: { type: integer, default: 10 }
+        max_api_calls_day: { type: integer, default: 10000 }
+        support_priority: { type: string, enum: ["low", "medium", "high"], default: "low" }
+        has_analytics: { type: boolean, default: false }
+        has_integrations: { type: boolean, default: false }
+        has_ai: { type: boolean, default: false }
+        has_white_label: { type: boolean, default: false }
+      example: |
+        max_users: 5
+        max_enterprises: 1
+        max_documents_month: 1000
+        max_storage_gb: 10
+        max_api_calls_day: 10000
+        support_priority: "low"
+        has_analytics: false
+        has_integrations: false
+        has_ai: false
+        has_white_label: false
+  
+  - is_active:
+      type: boolean
+      default: true
+      description: "Тариф доступен для покупки"
+  
+  - sort_order:
+      type: integer
+      default: 0
+      description: "Порядок отображения"
+  
+  - created_at:
+      type: datetime
+      default: "now()"
+
+examples:
+  - id: "880e8400-e29b-41d4-a716-446655440000"
+    name: "BASE_5K"
+    display_name: "Базовый (5 000 ₽/мес)"
+    description: "Для стартапов и малого бизнеса. Всё необходимое для ведения учета."
+    price_monthly: 5000
+    price_annual: 50000
+    currency: "RUB"
+    features:
+      - id: "users"
+        name: "Пользователи"
+        included: true
+        limit: 5
+        unit: "шт"
+      - id: "documents"
+        name: "Документы в месяц"
+        included: true
+        limit: 1000
+        unit: "шт"
+      - id: "enterprises"
+        name: "Юридические лица"
+        included: true
+        limit: 1
+        unit: "шт"
+      - id: "counterparties"
+        name: "Контрагенты"
+        included: true
+        limit: 500
+        unit: "шт"
+      - id: "analytics"
+        name: "Юнит-экономика"
+        included: false
+        limit: null
+        unit: null
+      - id: "integrations"
+        name: "Интеграции (1С, банки)"
+        included: false
+        limit: null
+        unit: null
+      - id: "ai_assistant"
+        name: "AI-ассистент"
+        included: false
+        limit: null
+        unit: null
+    limitations:
+      max_users: 5
+      max_enterprises: 1
+      max_documents_month: 1000
+      max_storage_gb: 10
+      max_api_calls_day: 10000
+      support_priority: "low"
+      has_analytics: false
+      has_integrations: false
+      has_ai: false
+      has_white_label: false
+    is_active: true
+    sort_order: 1
+
+  - id: "880e8400-e29b-41d4-a716-446655440001"
+    name: "PRO_10K"
+    display_name: "Профессиональный (10 000 ₽/мес)"
+    description: "Для растущего бизнеса. Полная аналитика и интеграции."
+    price_monthly: 10000
+    price_annual: 100000
+    currency: "RUB"
+    features:
+      - id: "users"
+        name: "Пользователи"
+        included: true
+        limit: 20
+        unit: "шт"
+      - id: "documents"
+        name: "Документы в месяц"
+        included: true
+        limit: 10000
+        unit: "шт"
+      - id: "enterprises"
+        name: "Юридические лица"
+        included: true
+        limit: 10
+        unit: "шт"
+      - id: "counterparties"
+        name: "Контрагенты"
+        included: true
+        limit: 10000
+        unit: "шт"
+      - id: "analytics"
+        name: "Юнит-экономика"
+        included: true
+        limit: null
+        unit: null
+      - id: "integrations"
+        name: "Интеграции (1С, банки)"
+        included: true
+        limit: 5
+        unit: "шт"
+      - id: "ai_assistant"
+        name: "AI-ассистент"
+        included: true
+        limit: 1000
+        unit: "запросов/мес"
+    limitations:
+      max_users: 20
+      max_enterprises: 10
+      max_documents_month: 10000
+      max_storage_gb: 50
+      max_api_calls_day: 100000
+      support_priority: "high"
+      has_analytics: true
+      has_integrations: true
+      has_ai: true
+      has_white_label: false
+    is_active: true
+    sort_order: 2
+
+  - id: "880e8400-e29b-41d4-a716-446655440002"
+    name: "ENTERPRISE"
+    display_name: "Корпоративный (Индивидуально)"
+    description: "Для холдингов и крупного бизнеса. Всё включено + White Label."
+    price_monthly: null
+    price_annual: null
+    currency: "RUB"
+    features:
+      - id: "users"
+        name: "Пользователи"
+        included: true
+        limit: null
+        unit: "неограничено"
+      - id: "documents"
+        name: "Документы в месяц"
+        included: true
+        limit: null
+        unit: "неограничено"
+      - id: "enterprises"
+        name: "Юридические лица"
+        included: true
+        limit: null
+        unit: "неограничено"
+      - id: "counterparties"
+        name: "Контрагенты"
+        included: true
+        limit: null
+        unit: "неограничено"
+      - id: "analytics"
+        name: "Юнит-экономика"
+        included: true
+        limit: null
+        unit: null
+      - id: "integrations"
+        name: "Интеграции (1С, банки)"
+        included: true
+        limit: null
+        unit: "неограничено"
+      - id: "ai_assistant"
+        name: "AI-ассистент"
+        included: true
+        limit: null
+        unit: "неограничено"
+      - id: "white_label"
+        name: "White Label (Брендирование)"
+        included: true
+        limit: null
+        unit: null
+    limitations:
+      max_users: null
+      max_enterprises: null
+      max_documents_month: null
+      max_storage_gb: 500
+      max_api_calls_day: 1000000
+      support_priority: "high"
+      has_analytics: true
+      has_integrations: true
+      has_ai: true
+      has_white_label: true
+    is_active: true
+    sort_order: 3

@@ -1,0 +1,447 @@
+# ============================================
+# Справочник: Разрешения (Permissions)
+# Тонкая настройка доступа для RBAC
+# ============================================
+# Описание: Определяет все возможные действия в системе
+# Используется в: roles.yaml, users.yaml (permissions_override)
+# ============================================
+
+version: "1.0.0"
+type: registry
+name: "permissions"
+description: "Матрица разрешений для всех ресурсов ERPForge"
+
+# ============================================
+# ГРУППЫ РЕСУРСОВ ПО МОДУЛЯМ
+# ============================================
+resource_groups:
+  - name: "system"
+    description: "Системные настройки и управление"
+    resources:
+      - name: "users"
+        description: "Управление пользователями"
+        actions: ["create", "read", "update", "delete", "manage_roles"]
+        scopes: ["own", "tenant", "global"]
+      
+      - name: "roles"
+        description: "Управление ролями"
+        actions: ["create", "read", "update", "delete", "assign"]
+        scopes: ["tenant", "global"]
+      
+      - name: "tenants"
+        description: "Управление клиентами (только глобально)"
+        actions: ["create", "read", "update", "delete", "suspend"]
+        scopes: ["global"]
+      
+      - name: "audit"
+        description: "Логи аудита"
+        actions: ["read", "export"]
+        scopes: ["tenant", "global"]
+      
+      - name: "settings"
+        description: "Настройки системы"
+        actions: ["read", "update"]
+        scopes: ["tenant", "global"]
+
+  - name: "accounting"
+    description: "Бухгалтерский учет"
+    resources:
+      - name: "documents"
+        description: "Первичные документы"
+        actions: ["create", "read", "update", "delete", "post", "cancel", "export"]
+        scopes: ["tenant"]
+      
+      - name: "registers"
+        description: "Регистры учета (проводки)"
+        actions: ["read", "export"]
+        scopes: ["tenant"]
+      
+      - name: "counterparties"
+        description: "Контрагенты"
+        actions: ["create", "read", "update", "delete", "import"]
+        scopes: ["tenant"]
+      
+      - name: "nomenclature"
+        description: "Номенклатура (товары/услуги)"
+        actions: ["create", "read", "update", "delete", "import", "export"]
+        scopes: ["tenant"]
+      
+      - name: "enterprises"
+        description: "Юридические лица (ООО/ИП)"
+        actions: ["create", "read", "update", "delete", "change_tax_policy"]
+        scopes: ["tenant"]
+
+  - name: "tax"
+    description: "Налоговый учет"
+    resources:
+      - name: "tax_declarations"
+        description: "Налоговые декларации"
+        actions: ["create", "read", "update", "delete", "submit", "export"]
+        scopes: ["tenant"]
+      
+      - name: "kdjr"
+        description: "Книга доходов и расходов"
+        actions: ["read", "export", "generate"]
+        scopes: ["tenant"]
+      
+      - name: "tax_calculations"
+        description: "Расчет налогов"
+        actions: ["read", "calculate", "export"]
+        scopes: ["tenant"]
+
+  - name: "crm"
+    description: "CRM и продажи"
+    resources:
+      - name: "leads"
+        description: "Лиды (потенциальные клиенты)"
+        actions: ["create", "read", "update", "delete", "convert", "assign"]
+        scopes: ["tenant"]
+      
+      - name: "opportunities"
+        description: "Сделки"
+        actions: ["create", "read", "update", "delete", "close", "forecast"]
+        scopes: ["tenant"]
+      
+      - name: "contracts"
+        description: "Договоры"
+        actions: ["create", "read", "update", "delete", "sign", "terminate"]
+        scopes: ["tenant"]
+      
+      - name: "commercial_offers"
+        description: "Коммерческие предложения"
+        actions: ["create", "read", "update", "delete", "send"]
+        scopes: ["tenant"]
+
+  - name: "hrm"
+    description: "Управление персоналом"
+    resources:
+      - name: "employees"
+        description: "Сотрудники"
+        actions: ["create", "read", "update", "delete", "hire", "fire", "transfer"]
+        scopes: ["tenant"]
+      
+      - name: "payroll"
+        description: "Зарплата и ФОТ"
+        actions: ["read", "calculate", "export", "approve"]
+        scopes: ["tenant"]
+      
+      - name: "timesheets"
+        description: "Табели учета времени"
+        actions: ["create", "read", "update", "delete", "approve"]
+        scopes: ["tenant"]
+
+  - name: "analytics"
+    description: "Аналитика и отчеты"
+    resources:
+      - name: "unit_economics"
+        description: "Юнит-экономика"
+        actions: ["read", "calculate", "export"]
+        scopes: ["tenant"]
+      
+      - name: "reports"
+        description: "Финансовые отчеты"
+        actions: ["read", "generate", "export", "schedule"]
+        scopes: ["tenant"]
+      
+      - name: "dashboard"
+        description: "Дашборды"
+        actions: ["read", "configure"]
+        scopes: ["tenant"]
+      
+      - name: "bi"
+        description: "Business Intelligence"
+        actions: ["read", "export", "configure"]
+        scopes: ["tenant"]
+
+  - name: "billing"
+    description: "Биллинг и подписки"
+    resources:
+      - name: "subscriptions"
+        description: "Управление подписками"
+        actions: ["create", "read", "update", "cancel", "upgrade", "downgrade"]
+        scopes: ["tenant"]
+      
+      - name: "invoices"
+        description: "Счета на оплату"
+        actions: ["create", "read", "update", "pay", "export"]
+        scopes: ["tenant"]
+      
+      - name: "payments"
+        description: "Платежи"
+        actions: ["read", "export", "refund"]
+        scopes: ["tenant"]
+
+  - name: "integrations"
+    description: "Интеграции"
+    resources:
+      - name: "connectors"
+        description: "Коннекторы к внешним системам"
+        actions: ["create", "read", "update", "delete", "enable", "disable", "test"]
+        scopes: ["tenant"]
+      
+      - name: "webhooks"
+        description: "Webhook-уведомления"
+        actions: ["create", "read", "update", "delete", "test"]
+        scopes: ["tenant"]
+      
+      - name: "sync"
+        description: "Синхронизация с внешними системами"
+        actions: ["read", "execute", "schedule"]
+        scopes: ["tenant"]
+
+  - name: "workflow"
+    description: "Бизнес-процессы"
+    resources:
+      - name: "workflows"
+        description: "Бизнес-процессы"
+        actions: ["create", "read", "update", "delete", "start", "stop"]
+        scopes: ["tenant"]
+      
+      - name: "tasks"
+        description: "Задачи"
+        actions: ["create", "read", "update", "delete", "assign", "approve", "reject"]
+        scopes: ["tenant"]
+
+  - name: "ai"
+    description: "AI-ассистент"
+    resources:
+      - name: "chat"
+        description: "Чат-бот"
+        actions: ["read", "send", "export"]
+        scopes: ["tenant"]
+      
+      - name: "predictions"
+        description: "Прогнозы и предсказания"
+        actions: ["read", "generate", "export"]
+        scopes: ["tenant"]
+      
+      - name: "auto_complete"
+        description: "Автозаполнение"
+        actions: ["read", "execute"]
+        scopes: ["tenant"]
+
+  - name: "support"
+    description: "Поддержка"
+    resources:
+      - name: "tickets"
+        description: "Тикеты поддержки"
+        actions: ["create", "read", "update", "delete", "assign", "close"]
+        scopes: ["tenant"]
+
+# ============================================
+# ПРЕДОПРЕДЕЛЕННЫЕ НАБОРЫ РАЗРЕШЕНИЙ
+# ============================================
+permission_sets:
+  - name: "full_access"
+    description: "Полный доступ ко всем ресурсам"
+    type: "global"
+    rules:
+      - resource: "*"
+        actions: ["*"]
+        scope: "global"
+
+  - name: "tenant_admin"
+    description: "Администратор клиента"
+    type: "tenant"
+    rules:
+      - resource: "*"
+        actions: ["*"]
+        scope: "tenant"
+      - resource: "tenants"
+        actions: []
+        scope: "global"
+
+  - name: "accountant_full"
+    description: "Полный доступ бухгалтера"
+    type: "tenant"
+    rules:
+      - resource: "documents"
+        actions: ["create", "read", "update", "post", "cancel", "export"]
+        scope: "tenant"
+      - resource: "registers"
+        actions: ["read", "export"]
+        scope: "tenant"
+      - resource: "counterparties"
+        actions: ["create", "read", "update", "export"]
+        scope: "tenant"
+      - resource: "nomenclature"
+        actions: ["create", "read", "update", "export"]
+        scope: "tenant"
+      - resource: "enterprises"
+        actions: ["read"]
+        scope: "tenant"
+      - resource: "tax_declarations"
+        actions: ["create", "read", "update", "submit", "export"]
+        scope: "tenant"
+      - resource: "reports"
+        actions: ["read", "generate", "export"]
+        scope: "tenant"
+
+  - name: "manager_read"
+    description: "Руководитель (только чтение)"
+    type: "tenant"
+    rules:
+      - resource: "reports"
+        actions: ["read", "export"]
+        scope: "tenant"
+      - resource: "unit_economics"
+        actions: ["read", "export"]
+        scope: "tenant"
+      - resource: "dashboard"
+        actions: ["read"]
+        scope: "tenant"
+      - resource: "bi"
+        actions: ["read"]
+        scope: "tenant"
+      - resource: "documents"
+        actions: ["read"]
+        scope: "tenant"
+
+  - name: "sales_team"
+    description: "Менеджер продаж"
+    type: "tenant"
+    rules:
+      - resource: "leads"
+        actions: ["create", "read", "update", "convert", "assign"]
+        scope: "tenant"
+      - resource: "opportunities"
+        actions: ["create", "read", "update", "close"]
+        scope: "tenant"
+      - resource: "contracts"
+        actions: ["create", "read", "update", "send"]
+        scope: "tenant"
+      - resource: "commercial_offers"
+        actions: ["create", "read", "update", "send"]
+        scope: "tenant"
+      - resource: "counterparties"
+        actions: ["create", "read", "update"]
+        scope: "tenant"
+
+  - name: "hrm_team"
+    description: "HR-специалист"
+    type: "tenant"
+    rules:
+      - resource: "employees"
+        actions: ["create", "read", "update", "hire", "fire", "transfer"]
+        scope: "tenant"
+      - resource: "timesheets"
+        actions: ["create", "read", "update", "approve"]
+        scope: "tenant"
+      - resource: "payroll"
+        actions: ["read"]
+        scope: "tenant"
+
+  - name: "readonly"
+    description: "Только чтение всех данных"
+    type: "tenant"
+    rules:
+      - resource: "*"
+        actions: ["read"]
+        scope: "tenant"
+
+# ============================================
+# ПРОВЕРКА РАЗРЕШЕНИЙ (Валидация)
+# ============================================
+validations:
+  - condition: "scope == 'global'"
+    require: "user has global_admin role"
+    message: "Глобальные разрешения доступны только суперадминистратору"
+  
+  - condition: "resource == 'tenants'"
+    require: "scope == 'global'"
+    message: "Управление клиентами доступно только глобальному администратору"
+
+  - condition: "action == 'delete' and resource == 'documents'"
+    require: "document.status == 'Draft'"
+    message: "Нельзя удалить проведенный документ"
+
+  - condition: "action == 'post' and resource == 'documents'"
+    require: "user has 'accountant' or 'admin' role"
+    message: "Проводить документы могут только бухгалтер или администратор"
+
+# ============================================
+# ПРИМЕРЫ ИСПОЛЬЗОВАНИЯ
+# ============================================
+examples:
+  # Проверка права на удаление пользователя
+  - check: "users.delete"
+    user: "admin@erpforge.com"
+    context: "tenant_id=660e8400-e29b-41d4-a716-446655440000"
+    result: true
+
+  # Проверка права на проведение документа
+  - check: "documents.post"
+    user: "accountant@company.ru"
+    context: "tenant_id=660e8400-e29b-41d4-a716-446655440000"
+    result: true
+
+  # Проверка права на просмотр платежей
+  - check: "payments.read"
+    user: "manager@company.ru"
+    context: "tenant_id=660e8400-e29b-41d4-a716-446655440000"
+    result: false
+
+# ============================================
+# МАТРИЦА ДОСТУПА (Сводная таблица)
+# ============================================
+access_matrix:
+  admin:
+    - resource: "*"
+      actions: ["*"]
+      scope: "global"
+  
+  accountant:
+    - resource: "documents"
+      actions: ["create", "read", "update", "post", "cancel", "export"]
+    - resource: "registers"
+      actions: ["read", "export"]
+    - resource: "counterparties"
+      actions: ["create", "read", "update", "export"]
+    - resource: "nomenclature"
+      actions: ["create", "read", "update", "export"]
+    - resource: "tax_declarations"
+      actions: ["create", "read", "update", "submit", "export"]
+    - resource: "reports"
+      actions: ["read", "generate", "export"]
+    - resource: "enterprises"
+      actions: ["read"]
+    - resource: "payments"
+      actions: ["read"]
+  
+  manager:
+    - resource: "reports"
+      actions: ["read", "export"]
+    - resource: "unit_economics"
+      actions: ["read", "export"]
+    - resource: "dashboard"
+      actions: ["read"]
+    - resource: "bi"
+      actions: ["read"]
+    - resource: "documents"
+      actions: ["read"]
+    - resource: "tax_declarations"
+      actions: ["read"]
+  
+  sales:
+    - resource: "leads"
+      actions: ["create", "read", "update", "convert", "assign"]
+    - resource: "opportunities"
+      actions: ["create", "read", "update", "close"]
+    - resource: "contracts"
+      actions: ["create", "read", "update", "send"]
+    - resource: "commercial_offers"
+      actions: ["create", "read", "update", "send"]
+    - resource: "counterparties"
+      actions: ["create", "read", "update"]
+  
+  hrm:
+    - resource: "employees"
+      actions: ["create", "read", "update", "hire", "fire", "transfer"]
+    - resource: "timesheets"
+      actions: ["create", "read", "update", "approve"]
+    - resource: "payroll"
+      actions: ["read"]
+  
+  readonly:
+    - resource: "*"
+      actions: ["read"]

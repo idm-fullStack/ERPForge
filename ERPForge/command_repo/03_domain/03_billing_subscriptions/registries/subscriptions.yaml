@@ -1,0 +1,175 @@
+# ============================================
+# Справочник: Подписки клиентов (Subscriptions)
+# ============================================
+
+version: "1.0.0"
+type: registry
+name: "subscriptions"
+description: "Активные и завершенные подписки клиентов"
+
+fields:
+  - id:
+      type: uuid
+      primary: true
+      description: "Уникальный идентификатор подписки"
+      example: "990e8400-e29b-41d4-a716-446655440000"
+  
+  - tenant_id:
+      type: uuid
+      required: true
+      indexed: true
+      foreign_key: "tenants.id"
+      description: "ID клиента"
+      example: "660e8400-e29b-41d4-a716-446655440000"
+  
+  - plan_id:
+      type: uuid
+      required: true
+      foreign_key: "plans.id"
+      description: "ID тарифного плана"
+      example: "880e8400-e29b-41d4-a716-446655440000"
+  
+  - status:
+      type: string
+      required: true
+      indexed: true
+      enum: ["trial", "active", "suspended", "canceled", "expired"]
+      description: "Статус подписки"
+      example: "active"
+  
+  - billing_period:
+      type: string
+      required: true
+      enum: ["monthly", "annual"]
+      default: "monthly"
+      description: "Период оплаты"
+  
+  - start_date:
+      type: datetime
+      required: true
+      description: "Дата начала подписки"
+      example: "2025-01-01T00:00:00Z"
+  
+  - current_period_start:
+      type: datetime
+      required: true
+      description: "Начало текущего периода"
+      example: "2025-01-01T00:00:00Z"
+  
+  - current_period_end:
+      type: datetime
+      required: true
+      indexed: true
+      description: "Конец текущего периода (дата списания)"
+      example: "2025-02-01T00:00:00Z"
+  
+  - cancel_at_period_end:
+      type: boolean
+      default: false
+      description: "Отменить в конце периода (не продлевать)"
+  
+  - canceled_at:
+      type: datetime
+      nullable: true
+      description: "Дата отмены подписки"
+      example: "2025-01-15T14:30:00Z"
+  
+  - payment_method:
+      type: string
+      required: true
+      enum: ["card", "invoice", "crypto", "prepaid"]
+      default: "card"
+      description: "Способ оплаты"
+  
+  - payment_provider:
+      type: string
+      enum: ["stripe", "yookassa", "manual", "crypto"]
+      required: true
+      description: "Платежный провайдер"
+      example: "stripe"
+  
+  - provider_customer_id:
+      type: string
+      description: "ID клиента в платежной системе"
+      example: "cus_123456789"
+  
+  - provider_subscription_id:
+      type: string
+      description: "ID подписки в платежной системе"
+      example: "sub_123456789"
+  
+  - auto_renew:
+      type: boolean
+      default: true
+      description: "Автоматическое продление"
+  
+  - is_trial:
+      type: boolean
+      default: false
+      description: "Пробный период"
+  
+  - trial_end_at:
+      type: datetime
+      nullable: true
+      description: "Окончание пробного периода"
+  
+  - last_invoice_id:
+      type: uuid
+      nullable: true
+      foreign_key: "invoices.id"
+      description: "Последний выставленный счет"
+  
+  - grace_period_days:
+      type: integer
+      default: 7
+      min: 0
+      max: 30
+      description: "Льготный период после просрочки (дней)"
+  
+  - suspended_at:
+      type: datetime
+      nullable: true
+      description: "Дата приостановки подписки"
+  
+  - suspension_reason:
+      type: string
+      nullable: true
+      enum: ["payment_failed", "manual", "fraud"]
+      description: "Причина приостановки"
+  
+  - created_at:
+      type: datetime
+      default: "now()"
+      description: "Дата создания записи"
+  
+  - updated_at:
+      type: datetime
+      default: "now()"
+      description: "Дата последнего обновления"
+
+validations:
+  - condition: "status == 'active' or status == 'suspended'"
+    require: "current_period_end > now()"
+    message: "У активной подписки период должен быть в будущем"
+  
+  - condition: "is_trial == true"
+    require: "trial_end_at is not null"
+    message: "Для пробного периода нужно указать дату окончания"
+
+examples:
+  - id: "990e8400-e29b-41d4-a716-446655440000"
+    tenant_id: "660e8400-e29b-41d4-a716-446655440000"
+    plan_id: "880e8400-e29b-41d4-a716-446655440000"
+    status: "active"
+    billing_period: "monthly"
+    start_date: "2025-01-01T00:00:00Z"
+    current_period_start: "2025-01-01T00:00:00Z"
+    current_period_end: "2025-02-01T00:00:00Z"
+    cancel_at_period_end: false
+    payment_method: "card"
+    payment_provider: "stripe"
+    provider_customer_id: "cus_123456789"
+    provider_subscription_id: "sub_123456789"
+    auto_renew: true
+    is_trial: false
+    created_at: "2025-01-01T00:00:00Z"
