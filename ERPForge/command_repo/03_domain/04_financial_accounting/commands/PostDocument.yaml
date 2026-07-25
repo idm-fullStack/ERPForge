@@ -1,0 +1,68 @@
+# ============================================
+# Команда: Провести документ (Post Document)
+# ============================================
+name: "PostDocument"
+description: "Проведение документа с созданием проводок"
+version: "1.0.0"
+
+inputs:
+  - document_id:
+      type: uuid
+      required: true
+  - user_id:
+      type: uuid
+      required: true
+
+pre_conditions:
+  - "Документ должен существовать"
+  - "Документ должен быть в статусе 'draft'"
+  - "У пользователя должно быть право 'documents.post'"
+  - "Все позиции документа должны быть валидны"
+  - "Должно быть достаточно товара на складах"
+
+process:
+  steps:
+    - name: "ValidateDocument"
+      check:
+        - "Все обязательные поля заполнены"
+        - "Количество товаров > 0"
+        - "Суммы совпадают с расчетом"
+    
+    - name: "CheckStock"
+      check: "for each item: stock.quantity >= item.quantity"
+      on_fail: "Ошибка: недостаточно товара на складе"
+    
+    - name: "GeneratePostings"
+      depends_on: "document_type"
+      mappings:
+        SalesInvoice:
+          - "Дт 62.01 Кт 90.01 (Выручка)"
+          - "Дт 90.03 Кт 68.02 (НДС)"
+          - "Дт 90.02 Кт 41.01 (Себестоимость)"
+    
+    - name: "WriteLedger"
+      action: "INSERT INTO ledger_entries"
+    
+    - name: "UpdateStock"
+      action: "UPDATE stock_balances SET quantity -= item.quantity"
+    
+    - name: "UpdateDocumentStatus"
+      action: "UPDATE documents SET status = 'posted', posted_at = now(), posted_by = user_id"
+
+outputs:
+  - status:
+      type: string
+      enum: ["success", "failed"]
+  - document_id:
+      type: uuid
+  - posting_ids:
+      type: array
+  - errors:
+      type: array
+      nullable: true
+
+events:
+  on_success:
+    - DocumentPosted.yaml
+  on_failure:
+    - DocumentPostFailed.yaml

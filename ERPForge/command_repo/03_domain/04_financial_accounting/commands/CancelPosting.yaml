@@ -1,0 +1,103 @@
+# ============================================
+# Команда: Отменить проведение
+# Cancel Posting
+# ============================================
+
+name: "CancelPosting"
+description: "Отмена проведения документа (сторнирование)"
+version: "1.0.0"
+
+inputs:
+  - document_id:
+      type: uuid
+      required: true
+      description: "ID документа для отмены проведения"
+  
+  - user_id:
+      type: uuid
+      required: true
+      description: "ID пользователя, отменяющего проведение"
+  
+  - reason:
+      type: string
+      required: true
+      max_length: 500
+      description: "Причина отмены"
+      example: "Обнаружена ошибка в количестве товара"
+
+pre_conditions:
+  - "Документ должен существовать"
+  - "Документ должен быть в статусе 'posted'"
+  - "У пользователя должно быть право 'documents.cancel'"
+  - "Документ не должен быть закрыт для изменений"
+  - "Документ не должен быть в налоговых периодах, сданных в ФНС"
+
+process:
+  steps:
+    - name: "ValidateDocument"
+      description: "Проверка возможности отмены"
+      check:
+        - "Статус документа == 'posted'"
+        - "Не прошло более 30 дней с даты проведения"
+        - "Документ не связан с закрытыми периодами"
+    
+    - name: "CheckDependencies"
+      description: "Проверка зависимостей (другие документы)"
+      check: "Нет зависимых документов, ссылающихся на этот"
+      on_fail: "Ошибка: есть зависимые документы"
+    
+    - name: "ReversePostings"
+      description: "Сторнирование проводок"
+      action: |
+        for each posting in document.postings:
+          CREATE reverse_posting WITH amount = -posting.amount
+          INSERT INTO ledger_entries (reverse_posting)
+    
+    - name: "ReverseStock"
+      description: "Восстановление складских остатков"
+      action: "UPDATE stock_balances SET quantity += document.items.quantity"
+    
+    - name: "UpdateDocumentStatus"
+      description: "Обновление статуса документа"
+      action: "UPDATE documents SET status = 'cancelled', cancelled_at = now(), cancelled_by = user_id, cancel_reason = reason"
+    
+    - name: "LogAudit"
+      description: "Запись в лог аудита"
+      action: "INSERT INTO audit_log (action, user_id, document_id, reason)"
+
+outputs:
+  - status:
+      type: string
+      enum: ["success", "failed"]
+  
+  - document_id:
+      type: uuid
+      description: "ID отмененного документа"
+  
+  - reversal_posting_ids:
+      type: array
+      description: "Список ID сторнирующих проводок"
+  
+  - errors:
+      type: array
+      description: "Список ошибок при отмене"
+      nullable: true
+
+events:
+  on_success:
+    - DocumentCanceled.yaml
+  on_failure:
+    - CancelPostingFailed.yaml
+
+# ============================================
+# Безопасность: Отмена необратима
+# ============================================
+security:
+  - "Только пользователи с ролью 'accountant' или 'admin' могут отменять"
+  - "Отмена логируется в Audit Log с указанием причины"
+  - "Для проведения документа заново требуется пересоздать"
+
+examples:
+  - document_id: "ee0e8400-e29b-41d4-a716-446655440000"
+    user_id: "550e8400-e29b-41d4-a716-446655440001"
+    reason: "Обнаружена ошибка в количестве товара (указано 2 шт, фактически 1 шт)"

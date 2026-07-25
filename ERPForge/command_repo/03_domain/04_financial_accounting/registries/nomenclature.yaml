@@ -1,0 +1,174 @@
+# ============================================
+# Справочник: Номенклатура (Nomenclature)
+# Товары и услуги
+# ============================================
+
+version: "1.0.0"
+type: registry
+name: "nomenclature"
+description: "Справочник товаров, работ, услуг"
+
+fields:
+  - id:
+      type: uuid
+      primary: true
+      description: "Уникальный идентификатор"
+  
+  - enterprise_id:
+      type: uuid
+      required: true
+      indexed: true
+      foreign_key: "enterprises.id"
+      description: "ID юридического лица"
+  
+  - sku:
+      type: string
+      required: true
+      indexed: true
+      description: "Артикул (SKU)"
+      example: "PR-001"
+  
+  - barcode:
+      type: string
+      description: "Штрих-код"
+      example: "4601234567890"
+  
+  - name:
+      type: string
+      required: true
+      max_length: 300
+      description: "Наименование"
+      example: "Ноутбук Lenovo ThinkPad T14"
+  
+  - description:
+      type: string
+      description: "Описание"
+      example: "Ноутбук 14' Intel i7 16GB RAM 512GB SSD"
+  
+  - category:
+      type: string
+      indexed: true
+      description: "Категория товара"
+      example: "Электроника"
+  
+  - subcategory:
+      type: string
+      description: "Подкатегория"
+      example: "Ноутбуки"
+  
+  - type:
+      type: string
+      required: true
+      enum: ["product", "service", "work", "other"]
+      description: "Тип номенклатуры"
+      example: "product"
+  
+  - measurement_unit:
+      type: string
+      required: true
+      enum: ["шт", "кг", "л", "м", "м2", "м3", "упак", "комплект", "час"]
+      description: "Единица измерения"
+      example: "шт"
+  
+  - price:
+      type: numeric
+      description: "Цена продажи (руб)"
+      example: 79900.00
+  
+  - purchase_price:
+      type: numeric
+      description: "Цена закупки (руб)"
+      example: 65000.00
+  
+  - cost:
+      type: numeric
+      description: "Себестоимость (средняя)"
+      example: 67000.00
+  
+  - vat_rate:
+      type: integer
+      enum: [0, 10, 20]
+      default: 20
+      description: "Ставка НДС"
+      example: 20
+  
+  - is_service:
+      type: boolean
+      default: false
+      description: "Является услугой"
+  
+  - is_active:
+      type: boolean
+      default: true
+      indexed: true
+  
+  - min_quantity:
+      type: integer
+      default: 0
+      description: "Минимальный остаток для оповещения"
+  
+  - current_stock:
+      type: integer
+      default: 0
+      description: "Текущий остаток на складах"
+  
+  - attributes:
+      type: object
+      description: "Дополнительные атрибуты товара"
+      properties: {}
+      example: |
+        brand: "Lenovo"
+        model: "ThinkPad T14"
+        color: "Black"
+        warranty: "12 месяцев"
+  
+  - images:
+      type: array
+      items: { type: string }
+      description: "Ссылки на изображения"
+  
+  - created_at:
+      type: datetime
+      default: "now()"
+  
+  - updated_at:
+      type: datetime
+      default: "now()"
+
+examples:
+  - id: "dd0e8400-e29b-41d4-a716-446655440000"
+    enterprise_id: "660e8400-e29b-41d4-a716-446655440000"
+    sku: "PR-001"
+    barcode: "4601234567890"
+    name: "Ноутбук Lenovo ThinkPad T14"
+    description: "Ноутбук 14' Intel i7 16GB RAM 512GB SSD"
+    category: "Электроника"
+    subcategory: "Ноутбуки"
+    type: "product"
+    measurement_unit: "шт"
+    price: 79900.00
+    purchase_price: 65000.00
+    cost: 67000.00
+    vat_rate: 20
+    is_service: false
+    is_active: true
+    min_quantity: 5
+    current_stock: 15
+    attributes:
+      brand: "Lenovo"
+      model: "ThinkPad T14"
+      color: "Black"
+      warranty: "12 месяцев"
+
+  - id: "dd0e8400-e29b-41d4-a716-446655440001"
+    enterprise_id: "660e8400-e29b-41d4-a716-446655440000"
+    sku: "SRV-001"
+    name: "Бухгалтерский консалтинг"
+    description: "Консультационные услуги по ведению бухучета"
+    category: "Услуги"
+    type: "service"
+    measurement_unit: "час"
+    price: 3000.00
+    vat_rate: 20
+    is_service: true
+    is_active: true

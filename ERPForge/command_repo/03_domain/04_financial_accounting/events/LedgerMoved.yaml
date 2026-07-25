@@ -1,0 +1,114 @@
+# ============================================
+# Событие: Изменение проводок (Ledger Moved)
+# Факт изменения финансового состояния
+# ============================================
+
+name: "LedgerMoved"
+description: "Зафиксировано изменение в бухгалтерском регистре"
+version: "1.0.0"
+
+fields:
+  - event_id:
+      type: uuid
+      required: true
+      description: "Уникальный ID события"
+  
+  - enterprise_id:
+      type: uuid
+      required: true
+      description: "ID юридического лица"
+  
+  - document_id:
+      type: uuid
+      required: true
+      description: "ID документа, вызвавшего изменения"
+  
+  - document_type:
+      type: string
+      required: true
+      description: "Тип документа"
+  
+  - posting_ids:
+      type: array
+      required: true
+      description: "Список ID затронутых проводок"
+      items:
+        type: uuid
+  
+  - total_debit:
+      type: numeric
+      required: true
+      description: "Итого по дебету"
+  
+  - total_credit:
+      type: numeric
+      required: true
+      description: "Итого по кредиту"
+  
+  - affected_accounts:
+      type: array
+      required: true
+      description: "Список затронутых счетов"
+      items:
+        type: object
+        properties:
+          account: { type: string }
+          debit: { type: numeric }
+          credit: { type: numeric }
+  
+  - transaction_type:
+      type: string
+      required: true
+      enum: ["increase", "decrease", "transfer", "reversal"]
+      description: "Тип транзакции"
+  
+  - occurred_at:
+      type: datetime
+      required: true
+      description: "Время изменения"
+  
+  - triggered_by:
+      type: uuid
+      required: true
+      description: "ID пользователя, вызвавшего изменение"
+
+reactions:
+  - "Обновление балансовых витрин для отчетности"
+  - "Автоматический пересчет налоговых обязательств"
+  - "Обновление юнит-экономики (если затронуты доходы/расходы)"
+  - "Триггер для уведомлений при больших списаниях (> 1 млн руб)"
+  - "Запись в аудит для налоговой проверки"
+
+example:
+  - event_id: "hh0e8400-e29b-41d4-a716-446655440000"
+    enterprise_id: "660e8400-e29b-41d4-a716-446655440000"
+    document_id: "ee0e8400-e29b-41d4-a716-446655440000"
+    document_type: "SalesInvoice"
+    posting_ids:
+      - "ff0e8400-e29b-41d4-a716-446655440000"
+      - "ff0e8400-e29b-41d4-a716-446655440001"
+      - "ff0e8400-e29b-41d4-a716-446655440002"
+    total_debit: 320433.33
+    total_credit: 320433.33
+    affected_accounts:
+      - account: "62.01"
+        debit: 159800.00
+        credit: 0
+      - account: "90.01"
+        debit: 0
+        credit: 159800.00
+      - account: "90.03"
+        debit: 26633.33
+        credit: 0
+      - account: "68.02"
+        debit: 0
+        credit: 26633.33
+      - account: "90.02"
+        debit: 134000.00
+        credit: 0
+      - account: "41.01"
+        debit: 0
+        credit: 134000.00
+    transaction_type: "increase"
+    occurred_at: "2025-01-15T14:30:00Z"
+    triggered_by: "550e8400-e29b-41d4-a716-446655440001"

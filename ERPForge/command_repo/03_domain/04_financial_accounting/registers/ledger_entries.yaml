@@ -1,0 +1,73 @@
+# ============================================
+# Регистр: Бухгалтерские проводки (Ledger Entries)
+# ============================================
+version: "1.0.0"
+type: register
+name: "ledger_entries"
+description: "Регистр бухгалтерских проводок (Журнал-Главная)"
+
+fields:
+  - id:
+      type: uuid
+      primary: true
+  - enterprise_id:
+      type: uuid
+      required: true
+      indexed: true
+  - document_id:
+      type: uuid
+      required: true
+      indexed: true
+  - document_type:
+      type: string
+      required: true
+  - account_debit:
+      type: string
+      required: true
+  - account_credit:
+      type: string
+      required: true
+  - subaccount_debit:
+      type: string
+  - subaccount_credit:
+      type: string
+  - amount:
+      type: numeric
+      required: true
+  - currency:
+      type: string
+      default: "RUB"
+  - amount_currency:
+      type: numeric
+  - rate:
+      type: numeric
+  - posting_date:
+      type: date
+      required: true
+      indexed: true
+  - period:
+      type: string
+  - description:
+      type: string
+  - dimension_1:
+      type: string
+  - dimension_2:
+      type: string
+  - dimension_3:
+      type: string
+  - created_at:
+      type: datetime
+      default: "now()"
+
+examples:
+  - id: "ff0e8400-e29b-41d4-a716-446655440000"
+    enterprise_id: "660e8400-e29b-41d4-a716-446655440000"
+    document_id: "ee0e8400-e29b-41d4-a716-446655440000"
+    document_type: "SalesInvoice"
+    account_debit: "62.01"
+    account_credit: "90.01"
+    amount: 159800.00
+    posting_date: "2025-01-15"
+    period: "2025-01"
+    description: "Реализация товаров ООО Ромашка"
+    dimension_1: "cc0e8400-e29b-41d4-a716-446655440000"

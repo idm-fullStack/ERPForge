@@ -1,0 +1,55 @@
+# ============================================
+# Регистр: Складские остатки (Stock Balances)
+# ============================================
+version: "1.0.0"
+type: register
+name: "stock_balances"
+description: "Регистр складских остатков товаров"
+
+fields:
+  - id:
+      type: uuid
+      primary: true
+  - enterprise_id:
+      type: uuid
+      required: true
+      indexed: true
+  - warehouse_id:
+      type: uuid
+      required: true
+      indexed: true
+  - nomenclature_id:
+      type: uuid
+      required: true
+      indexed: true
+  - quantity:
+      type: integer
+      required: true
+      default: 0
+  - reserved_quantity:
+      type: integer
+      default: 0
+  - available_quantity:
+      type: integer
+  - cost_per_unit:
+      type: numeric
+  - total_cost:
+      type: numeric
+  - last_update:
+      type: datetime
+      required: true
+  - version:
+      type: integer
+      default: 1
+
+examples:
+  - id: "10e8400-e29b-41d4-a716-446655440000"
+    enterprise_id: "660e8400-e29b-41d4-a716-446655440000"
+    warehouse_id: "warehouse-001"
+    nomenclature_id: "dd0e8400-e29b-41d4-a716-446655440000"
+    quantity: 15
+    reserved_quantity: 3
+    available_quantity: 12
+    cost_per_unit: 67000.00
+    total_cost: 1005000.00
+    last_update: "2025-01-15T14:30:00Z"

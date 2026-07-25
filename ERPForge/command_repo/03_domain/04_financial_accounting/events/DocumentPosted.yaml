@@ -1,0 +1,35 @@
+# ============================================
+# Событие: Документ проведен
+# ============================================
+name: "DocumentPosted"
+description: "Документ успешно проведен"
+version: "1.0.0"
+
+fields:
+  - document_id:
+      type: uuid
+      required: true
+  - document_type:
+      type: string
+      required: true
+  - enterprise_id:
+      type: uuid
+      required: true
+  - posted_by:
+      type: uuid
+      required: true
+  - posted_at:
+      type: datetime
+      required: true
+  - total_amount:
+      type: numeric
+      required: true
+  - posting_ids:
+      type: array
+      required: true
+
+reactions:
+  - "Обновить агрегированные данные для отчетности"
+  - "Отправить уведомление о проведении"
+  - "Записать событие в Audit Log"
+  - "Обновить финансовые дашборды"

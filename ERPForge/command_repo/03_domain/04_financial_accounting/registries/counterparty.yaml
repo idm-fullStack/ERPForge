@@ -1,0 +1,186 @@
+# ============================================
+# Справочник: Контрагенты (Counterparties)
+# Клиенты, поставщики, подрядчики
+# ============================================
+
+version: "1.0.0"
+type: registry
+name: "counterparty"
+description: "Справочник контрагентов (клиенты, поставщики)"
+
+fields:
+  - id:
+      type: uuid
+      primary: true
+      description: "Уникальный идентификатор контрагента"
+  
+  - enterprise_id:
+      type: uuid
+      required: true
+      indexed: true
+      foreign_key: "enterprises.id"
+      description: "ID юридического лица владельца"
+  
+  - name:
+      type: string
+      required: true
+      max_length: 300
+      description: "Полное наименование"
+      example: "ООО Ромашка"
+  
+  - short_name:
+      type: string
+      max_length: 100
+      description: "Краткое наименование"
+      example: "ООО Ромашка"
+  
+  - type:
+      type: string
+      required: true
+      indexed: true
+      enum: ["customer", "supplier", "both", "other"]
+      description: "Тип контрагента"
+      example: "both"
+  
+  - inn:
+      type: string
+      indexed: true
+      description: "ИНН"
+      example: "123456789012"
+  
+  - kpp:
+      type: string
+      description: "КПП (для юрлиц)"
+      example: "123456789"
+  
+  - ogrn:
+      type: string
+      description: "ОГРН"
+      example: "1234567890123"
+  
+  - legal_address:
+      type: string
+      description: "Юридический адрес"
+      example: "г. Москва, ул. Тверская, д. 1"
+  
+  - actual_address:
+      type: string
+      description: "Фактический адрес"
+      example: "г. Москва, ул. Ленина, д. 10"
+  
+  - phone:
+      type: string
+      description: "Телефон"
+      example: "+79001234567"
+  
+  - email:
+      type: string
+      format: email
+      description: "Email"
+      example: "info@romashka.ru"
+  
+  - website:
+      type: string
+      description: "Сайт"
+      example: "https://romashka.ru"
+  
+  - bank_accounts:
+      type: array
+      description: "Банковские счета"
+      items:
+        type: object
+        properties:
+          id: { type: string }
+          account_number: { type: string }
+          bank_name: { type: string }
+          bik: { type: string }
+          corr_account: { type: string }
+          is_primary: { type: boolean }
+      example: |
+        - account_number: "40702810100000000001"
+          bank_name: "Сбербанк"
+          bik: "044525225"
+          corr_account: "30101810400000000225"
+          is_primary: true
+  
+  - contact_persons:
+      type: array
+      description: "Контактные лица"
+      items:
+        type: object
+        properties:
+          name: { type: string }
+          position: { type: string }
+          phone: { type: string }
+          email: { type: string }
+      example: |
+        - name: "Иванов Иван"
+          position: "Директор"
+          phone: "+79001234568"
+          email: "director@romashka.ru"
+  
+  - tax_registration:
+      type: object
+      description: "Налоговая регистрация"
+      properties:
+        registered_at: { type: datetime }
+        tax_office: { type: string }
+        tax_office_code: { type: string }
+  
+  - status:
+      type: string
+      indexed: true
+      enum: ["active", "blocked", "archived"]
+      default: "active"
+      description: "Статус контрагента"
+  
+  - tags:
+      type: array
+      items: { type: string }
+      description: "Теги для группировки"
+      example: ["VIP", "ключевой", "партнер"]
+  
+  - created_at:
+      type: datetime
+      default: "now()"
+  
+  - updated_at:
+      type: datetime
+      default: "now()"
+
+examples:
+  - id: "cc0e8400-e29b-41d4-a716-446655440000"
+    enterprise_id: "660e8400-e29b-41d4-a716-446655440000"
+    name: "ООО Ромашка"
+    short_name: "Ромашка"
+    type: "both"
+    inn: "123456789012"
+    kpp: "123456789"
+    legal_address: "г. Москва, ул. Тверская, д. 1"
+    phone: "+79001234567"
+    email: "info@romashka.ru"
+    bank_accounts:
+      - account_number: "40702810100000000001"
+        bank_name: "Сбербанк"
+        bik: "044525225"
+        corr_account: "30101810400000000225"
+        is_primary: true
+    status: "active"
+    tags: ["VIP", "ключевой"]
+
+  - id: "cc0e8400-e29b-41d4-a716-446655440001"
+    enterprise_id: "660e8400-e29b-41d4-a716-446655440000"
+    name: "ООО ТехноПлюс"
+    type: "supplier"
+    inn: "987654321098"
+    legal_address: "г. Москва, ул. Пушкина, д. 5"
+    phone: "+79009876543"
+    email: "info@tehnoplus.ru"
+    bank_accounts:
+      - account_number: "40702810200000000002"
+        bank_name: "ВТБ"
+        bik: "044525745"
+        corr_account: "30101810100000000745"
+        is_primary: true
+    status: "active"
+    tags: ["поставщик", "основной"]

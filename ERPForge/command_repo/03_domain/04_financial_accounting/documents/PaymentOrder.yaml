@@ -1,0 +1,160 @@
+# ============================================
+# Документ: Платежное поручение
+# Payment Order
+# ============================================
+
+version: "1.0.0"
+type: document
+name: "PaymentOrder"
+description: "Платежное поручение на перечисление денежных средств"
+
+fields:
+  - id:
+      type: uuid
+      primary: true
+  
+  - enterprise_id:
+      type: uuid
+      required: true
+      indexed: true
+      description: "ID юридического лица-плательщика"
+  
+  - counterparty_id:
+      type: uuid
+      required: true
+      foreign_key: "counterparty.id"
+      description: "ID получателя платежа"
+  
+  - number:
+      type: string
+      required: true
+      indexed: true
+      description: "Номер платежного поручения"
+      example: "ПП-2025-001"
+  
+  - date:
+      type: date
+      required: true
+      description: "Дата документа"
+      example: "2025-01-16"
+  
+  - payment_type:
+      type: string
+      required: true
+      enum: ["cash", "bank_transfer", "card", "crypto"]
+      description: "Тип платежа"
+      example: "bank_transfer"
+  
+  - payment_purpose:
+      type: string
+      required: true
+      max_length: 500
+      description: "Назначение платежа"
+      example: "Оплата по договору №123 от 01.01.2025 за товары"
+  
+  - amount:
+      type: numeric
+      required: true
+      min: 0
+      description: "Сумма платежа"
+      example: 159800.00
+  
+  - vat_rate:
+      type: integer
+      enum: [0, 10, 20]
+      default: 20
+      description: "Ставка НДС"
+  
+  - vat_amount:
+      type: numeric
+      description: "Сумма НДС"
+      example: 26633.33
+  
+  - payer_account:
+      type: object
+      required: true
+      description: "Реквизиты плательщика"
+      properties:
+        account_number: { type: string }
+        bank_name: { type: string }
+        bik: { type: string }
+        corr_account: { type: string }
+  
+  - receiver_account:
+      type: object
+      required: true
+      description: "Реквизиты получателя"
+      properties:
+        account_number: { type: string }
+        bank_name: { type: string }
+        bik: { type: string }
+        corr_account: { type: string }
+  
+  - status:
+      type: string
+      required: true
+      indexed: true
+      enum: ["draft", "posted", "processed", "cancelled"]
+      default: "draft"
+  
+  - posted_at:
+      type: datetime
+      nullable: true
+      description: "Дата проведения"
+  
+  - posted_by:
+      type: uuid
+      nullable: true
+      description: "Кто провел"
+  
+  - processed_at:
+      type: datetime
+      nullable: true
+      description: "Дата фактического исполнения"
+  
+  - transaction_id:
+      type: string
+      description: "ID транзакции в банке"
+  
+  - created_at:
+      type: datetime
+      default: "now()"
+  
+  - created_by:
+      type: uuid
+      description: "Кто создал"
+  
+  - updated_at:
+      type: datetime
+      default: "now()"
+
+posting_rules:
+  - "Если платеж исходящий: Дт 60/76 Кт 51 (Списание с расчетного счета)"
+  - "Если платеж входящий: Дт 51 Кт 62/76 (Поступление на расчетный счет)"
+  - "При наличии НДС: дополнительная проводка по НДС"
+
+examples:
+  - id: "gg0e8400-e29b-41d4-a716-446655440000"
+    enterprise_id: "660e8400-e29b-41d4-a716-446655440000"
+    counterparty_id: "cc0e8400-e29b-41d4-a716-446655440001"
+    number: "ПП-2025-001"
+    date: "2025-01-16"
+    payment_type: "bank_transfer"
+    payment_purpose: "Оплата по договору №123 от 01.01.2025 за товары"
+    amount: 159800.00
+    vat_rate: 20
+    vat_amount: 26633.33
+    payer_account:
+      account_number: "40702810100000000001"
+      bank_name: "Сбербанк"
+      bik: "044525225"
+      corr_account: "30101810400000000225"
+    receiver_account:
+      account_number: "40702810200000000002"
+      bank_name: "ВТБ"
+      bik: "044525745"
+      corr_account: "30101810100000000745"
+    status: "posted"
+    posted_at: "2025-01-16T10:00:00Z"
+    processed_at: "2025-01-16T11:30:00Z"
+    transaction_id: "TRX-2025-001"

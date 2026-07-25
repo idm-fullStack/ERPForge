@@ -1,0 +1,144 @@
+# ============================================
+# Документ: Накладная (Реализация товаров)
+# Sales Invoice
+# ============================================
+
+version: "1.0.0"
+type: document
+name: "SalesInvoice"
+description: "Документ реализации товаров/услуг"
+
+fields:
+  - id:
+      type: uuid
+      primary: true
+  
+  - enterprise_id:
+      type: uuid
+      required: true
+      indexed: true
+      description: "ID юридического лица продавца"
+  
+  - counterparty_id:
+      type: uuid
+      required: true
+      foreign_key: "counterparty.id"
+      description: "ID покупателя"
+  
+  - number:
+      type: string
+      required: true
+      indexed: true
+      description: "Номер документа"
+      example: "СЧ-2025-001"
+  
+  - date:
+      type: date
+      required: true
+      description: "Дата документа"
+      example: "2025-01-15"
+  
+  - warehouse_id:
+      type: uuid
+      description: "ID склада отгрузки"
+  
+  - items:
+      type: array
+      required: true
+      min_items: 1
+      description: "Позиции документа"
+      items:
+        type: object
+        properties:
+          id: { type: string }
+          nomenclature_id: { type: uuid, required: true }
+          quantity: { type: integer, required: true, min: 1 }
+          price: { type: numeric, required: true, min: 0 }
+          vat_rate: { type: integer, enum: [0, 10, 20], default: 20 }
+          discount: { type: numeric, default: 0 }
+          total: { type: numeric }
+      example: |
+        - nomenclature_id: "dd0e8400-e29b-41d4-a716-446655440000"
+          quantity: 2
+          price: 79900.00
+          vat_rate: 20
+          discount: 0
+          total: 159800.00
+  
+  - subtotal:
+      type: numeric
+      required: true
+      description: "Сумма без НДС"
+      example: 133166.67
+  
+  - vat_total:
+      type: numeric
+      required: true
+      description: "Сумма НДС"
+      example: 26633.33
+  
+  - total_amount:
+      type: numeric
+      required: true
+      description: "Итого с НДС"
+      example: 159800.00
+  
+  - status:
+      type: string
+      required: true
+      indexed: true
+      enum: ["draft", "posted", "cancelled"]
+      default: "draft"
+  
+  - posted_at:
+      type: datetime
+      nullable: true
+      description: "Дата проведения"
+  
+  - posted_by:
+      type: uuid
+      nullable: true
+      description: "Кто провел"
+  
+  - payment_status:
+      type: string
+      enum: ["unpaid", "partially_paid", "paid"]
+      default: "unpaid"
+  
+  - created_at:
+      type: datetime
+      default: "now()"
+  
+  - created_by:
+      type: uuid
+      description: "Кто создал"
+  
+  - updated_at:
+      type: datetime
+      default: "now()"
+
+posting_rules:
+  - "При проведении создаются проводки: Дт 62.01 Кт 90.01 (Выручка)"
+  - "Дт 90.03 Кт 68.02 (НДС)"
+  - "Дт 90.02 Кт 41.01 (Себестоимость)"
+  - "Дт 90.02 Кт 20 (Списание затрат)"
+
+examples:
+  - id: "ee0e8400-e29b-41d4-a716-446655440000"
+    enterprise_id: "660e8400-e29b-41d4-a716-446655440000"
+    counterparty_id: "cc0e8400-e29b-41d4-a716-446655440000"
+    number: "СЧ-2025-001"
+    date: "2025-01-15"
+    items:
+      - nomenclature_id: "dd0e8400-e29b-41d4-a716-446655440000"
+        quantity: 2
+        price: 79900.00
+        vat_rate: 20
+        discount: 0
+        total: 159800.00
+    subtotal: 133166.67
+    vat_total: 26633.33
+    total_amount: 159800.00
+    status: "posted"
+    posted_at: "2025-01-15T14:30:00Z"
+    payment_status: "paid"
