@@ -1,0 +1,328 @@
+# ============================================
+# Справочник: Юридические лица (Legal Entities)
+# Мультиюрлица: ООО, ИП, Самозанятые, Филиалы
+# ============================================
+version: "1.0.0"
+type: registry
+name: "legal_entities"
+description: "Справочник юридических лиц и ИП в холдинге"
+
+fields:
+  - id:
+      type: uuid
+      primary: true
+      description: "Уникальный идентификатор юрлица"
+
+  - tenant_id:
+      type: uuid
+      required: true
+      indexed: true
+      description: "ID клиента (владелец холдинга)"
+      foreign_key: "tenants.id"
+
+  - parent_id:
+      type: uuid
+      nullable: true
+      indexed: true
+      description: "ID головной организации (для холдингов)"
+      foreign_key: "legal_entities.id"
+
+  - name:
+      type: string
+      required: true
+      max_length: 300
+      description: "Полное наименование"
+      example: "Общество с ограниченной ответственностью 'Ромашка'"
+
+  - short_name:
+      type: string
+      max_length: 100
+      description: "Краткое наименование"
+      example: "ООО 'Ромашка'"
+
+  - type:
+      type: string
+      required: true
+      indexed: true
+      enum: ["ooo", "ao", "pao", "ip", "self_employed", "branch", "representative_office"]
+      description: "Тип юридического лица"
+      example: "ooo"
+
+  - inn:
+      type: string
+      required: true
+      indexed: true
+      unique: true
+      max_length: 12
+      description: "ИНН (10 или 12 цифр)"
+      example: "123456789012"
+
+  - kpp:
+      type: string
+      max_length: 9
+      description: "КПП (только для юрлиц)"
+      example: "123456789"
+
+  - ogrn:
+      type: string
+      max_length: 15
+      description: "ОГРН / ОГРНИП"
+      example: "1234567890123"
+
+  - okpo:
+      type: string
+      max_length: 10
+      description: "ОКПО"
+      example: "12345678"
+
+  - legal_address:
+      type: string
+      required: true
+      max_length: 500
+      description: "Юридический адрес"
+      example: "г. Москва, ул. Тверская, д. 1, оф. 101"
+
+  - actual_address:
+      type: string
+      max_length: 500
+      description: "Фактический адрес (если отличается)"
+      example: "г. Москва, ул. Ленина, д. 10"
+
+  - postal_address:
+      type: string
+      max_length: 500
+      description: "Почтовый адрес"
+
+  - tax_system:
+      type: string
+      required: true
+      indexed: true
+      enum: ["osno", "usn_income", "usn_expenses", "patent", "eshn", "self_employed"]
+      description: "Система налогообложения"
+      example: "usn_expenses"
+
+  - tax_rate:
+      type: numeric
+      description: "Налоговая ставка в процентах"
+      example: 15.0
+
+  - vat_registered:
+      type: boolean
+      default: false
+      description: "Зарегистрирован как плательщик НДС"
+      example: true
+
+  - vat_rate:
+      type: integer
+      enum: [0, 10, 20]
+      default: 20
+      description: "Ставка НДС"
+      example: 20
+
+  - registration_date:
+      type: date
+      required: true
+      description: "Дата регистрации"
+      example: "2020-01-15"
+
+  - registration_authority:
+      type: string
+      description: "Наименование регистрирующего органа"
+      example: "МИФНС №46 по г. Москве"
+
+  - director:
+      type: object
+      description: "Информация о директоре"
+      properties:
+        full_name: { type: string }
+        position: { type: string, default: "Генеральный директор" }
+        basis: { type: string, enum: ["charter", "power_of_attorney"], default: "charter" }
+
+  - founders:
+      type: array
+      description: "Список учредителей"
+      items:
+        type: object
+        properties:
+          name: { type: string }
+          share_percent: { type: numeric, min: 0, max: 100 }
+          type: { type: string, enum: ["individual", "legal"] }
+
+  - authorized_capital:
+      type: numeric
+      description: "Уставный капитал в рублях"
+      example: 10000.00
+
+  - bank_accounts:
+      type: array
+      description: "Банковские счета юрлица"
+      items:
+        type: object
+        properties:
+          id: { type: string }
+          account_number: { type: string, required: true }
+          bank_name: { type: string, required: true }
+          bik: { type: string, required: true }
+          corr_account: { type: string }
+          currency: { type: string, default: "RUB" }
+          is_primary: { type: boolean, default: false }
+          is_active: { type: boolean, default: true }
+
+  - contact_info:
+      type: object
+      description: "Контактная информация"
+      properties:
+        phone: { type: string }
+        email: { type: string, format: email }
+        website: { type: string }
+
+  - status:
+      type: string
+      indexed: true
+      enum: ["active", "inactive", "liquidated", "reorganizing"]
+      default: "active"
+      description: "Статус юридического лица"
+
+  - is_primary:
+      type: boolean
+      default: false
+      description: "Основное юридическое лицо в холдинге"
+
+  - settings:
+      type: object
+      description: "Настройки учета для юрлица"
+      properties:
+        accounting_policy: { type: string }
+        inventory_method: { type: string, enum: ["fifo", "average", "lifo"], default: "average" }
+        currency: { type: string, default: "RUB" }
+        fiscal_year_start: { type: string, default: "01-01" }
+        rounding_precision: { type: integer, default: 2 }
+
+  - tags:
+      type: array
+      items: { type: string }
+      description: "Теги для группировки"
+      example: ["основное", "холдинг"]
+
+  - metadata:
+      type: object
+      description: "Дополнительная информация"
+      properties:
+        created_by: { type: uuid }
+        updated_by: { type: uuid }
+        notes: { type: string }
+
+  - created_at:
+      type: datetime
+      default: "now()"
+
+  - updated_at:
+      type: datetime
+      default: "now()"
+
+validations:
+  - condition: "type == 'ip' or type == 'self_employed'"
+    require: "kpp is null"
+    message: "У ИП и самозанятых нет КПП"
+
+  - condition: "type != 'ip' and type != 'self_employed'"
+    require: "kpp is not null"
+    message: "Для юрлиц обязательно заполнение КПП"
+
+  - condition: "type == 'ooo' or type == 'ao' or type == 'pao'"
+    require: "authorized_capital is not null and authorized_capital >= 10000"
+    message: "Минимальный уставный капитал для ООО/АО - 10 000 руб"
+
+examples:
+  - id: "aa0e8400-e29b-41d4-a716-446655440000"
+    tenant_id: "660e8400-e29b-41d4-a716-446655440000"
+    parent_id: null
+    name: "Общество с ограниченной ответственностью 'Ромашка'"
+    short_name: "ООО 'Ромашка'"
+    type: "ooo"
+    inn: "123456789012"
+    kpp: "123456789"
+    ogrn: "1234567890123"
+    okpo: "12345678"
+    legal_address: "г. Москва, ул. Тверская, д. 1, оф. 101"
+    actual_address: "г. Москва, ул. Тверская, д. 1, оф. 101"
+    tax_system: "usn_expenses"
+    tax_rate: 15.0
+    vat_registered: true
+    vat_rate: 20
+    registration_date: "2020-01-15"
+    registration_authority: "МИФНС №46 по г. Москве"
+    director:
+      full_name: "Иванов Иван Иванович"
+      position: "Генеральный директор"
+      basis: "charter"
+    founders:
+      - name: "Иванов Иван Иванович"
+        share_percent: 100
+        type: "individual"
+    authorized_capital: 10000.00
+    bank_accounts:
+      - account_number: "40702810100000000001"
+        bank_name: "Сбербанк"
+        bik: "044525225"
+        corr_account: "30101810400000000225"
+        currency: "RUB"
+        is_primary: true
+        is_active: true
+    contact_info:
+      phone: "+79001234567"
+      email: "info@romashka.ru"
+      website: "https://romashka.ru"
+    status: "active"
+    is_primary: true
+    settings:
+      accounting_policy: "Общая система налогообложения (УСН 15%)"
+      inventory_method: "fifo"
+      currency: "RUB"
+      fiscal_year_start: "01-01"
+      rounding_precision: 2
+    tags: ["основное", "холдинг"]
+    created_at: "2020-01-15T10:00:00Z"
+
+  - id: "aa0e8400-e29b-41d4-a716-446655440001"
+    tenant_id: "660e8400-e29b-41d4-a716-446655440000"
+    parent_id: null
+    name: "Индивидуальный предприниматель Петров Иван Сергеевич"
+    short_name: "ИП Петров И.С."
+    type: "ip"
+    inn: "123456789013"
+    kpp: null
+    ogrn: "1234567890124"
+    legal_address: "г. Москва, ул. Пушкина, д. 5, кв. 10"
+    actual_address: "г. Москва, ул. Пушкина, д. 5, кв. 10"
+    tax_system: "patent"
+    tax_rate: 6.0
+    vat_registered: false
+    vat_rate: 0
+    registration_date: "2021-03-20"
+    registration_authority: "МИФНС №46 по г. Москве"
+    director:
+      full_name: "Петров Иван Сергеевич"
+      position: "Индивидуальный предприниматель"
+      basis: "charter"
+    bank_accounts:
+      - account_number: "40802810200000000002"
+        bank_name: "ВТБ"
+        bik: "044525745"
+        corr_account: "30101810100000000745"
+        currency: "RUB"
+        is_primary: true
+        is_active: true
+    contact_info:
+      phone: "+79009876543"
+      email: "petrov@example.ru"
+    status: "active"
+    is_primary: false
+    settings:
+      accounting_policy: "Патентная система налогообложения"
+      inventory_method: "average"
+      currency: "RUB"
+      fiscal_year_start: "01-01"
+      rounding_precision: 2
+    tags: ["дополнительное"]
+    created_at: "2021-03-20T11:00:00Z"
