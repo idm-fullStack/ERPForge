@@ -1,0 +1,185 @@
+# ============================================
+# Команда: Создать юридическое лицо (Create Enterprise)
+# ============================================
+name: "CreateEnterprise"
+description: "Регистрация нового юридического лица в холдинге"
+version: "1.0.0"
+
+inputs:
+  - tenant_id:
+      type: uuid
+      required: true
+      description: "ID клиента-владельца"
+
+  - name:
+      type: string
+      required: true
+      max_length: 300
+      description: "Полное наименование"
+
+  - short_name:
+      type: string
+      max_length: 100
+      description: "Краткое наименование"
+
+  - type:
+      type: string
+      required: true
+      enum: ["ooo", "ao", "pao", "ip", "self_employed", "branch", "representative_office"]
+      description: "Тип юридического лица"
+
+  - inn:
+      type: string
+      required: true
+      max_length: 12
+      description: "ИНН"
+
+  - kpp:
+      type: string
+      max_length: 9
+      description: "КПП (для юрлиц)"
+
+  - ogrn:
+      type: string
+      max_length: 15
+      description: "ОГРН"
+
+  - legal_address:
+      type: string
+      required: true
+      max_length: 500
+      description: "Юридический адрес"
+
+  - tax_system:
+      type: string
+      required: true
+      enum: ["osno", "usn_income", "usn_expenses", "patent", "eshn", "self_employed"]
+      description: "Система налогообложения"
+
+  - registration_date:
+      type: date
+      required: true
+      description: "Дата регистрации"
+
+  - director_name:
+      type: string
+      required: true
+      max_length: 200
+      description: "ФИО директора"
+
+  - bank_account:
+      type: object
+      required: true
+      description: "Банковский счет"
+      properties:
+        account_number: { type: string, required: true }
+        bank_name: { type: string, required: true }
+        bik: { type: string, required: true }
+        corr_account: { type: string }
+
+  - parent_id:
+      type: uuid
+      nullable: true
+      description: "ID головной организации (для холдингов)"
+
+  - is_primary:
+      type: boolean
+      default: false
+      description: "Основное юридическое лицо"
+
+  - vat_registered:
+      type: boolean
+      default: false
+      description: "Зарегистрирован как плательщик НДС"
+
+  - tags:
+      type: array
+      items: { type: string }
+      description: "Теги"
+
+pre_conditions:
+  - "Клиент (tenant) должен существовать и быть активным"
+  - "ИНН должен быть уникальным в рамках системы"
+  - "У пользователя должно быть право 'enterprises.create'"
+  - "Если указан parent_id, родитель должен существовать"
+
+post_conditions:
+  - "Юридическое лицо создано в статусе 'active'"
+  - "Создана запись в Audit Log"
+  - "Если is_primary == true, сбросить флаг у других юрлиц"
+
+process:
+  steps:
+    - name: "ValidateInput"
+      check:
+        - "ИНН валидный (10 или 12 цифр)"
+        - "Для юрлиц заполнен КПП"
+        - "Для ИП/самозанятых КПП отсутствует"
+        - "ОГРН валидный"
+        - "Дата регистрации не в будущем"
+
+    - name: "CheckUniqueInn"
+      check: "SELECT COUNT(*) FROM legal_entities WHERE inn = '{inn}'"
+      on_fail: "Ошибка: ИНН уже существует в системе"
+
+    - name: "CreateEntity"
+      action: "INSERT INTO legal_entities SET {...}"
+      returns: "entity_id"
+
+    - name: "SetPrimaryFlag"
+      condition: "is_primary == true"
+      action: "UPDATE legal_entities SET is_primary = false WHERE tenant_id = '{tenant_id}' AND id != '{entity_id}'"
+
+    - name: "CreateDefaultTaxSettings"
+      action: "INSERT INTO tax_settings (enterprise_id, tax_system, tax_rate, vat_rate) VALUES (...)"
+
+    - name: "CreateDefaultAccountingSettings"
+      action: "INSERT INTO accounting_settings (enterprise_id, inventory_method, currency) VALUES (...)"
+
+    - name: "LogAudit"
+      action: "INSERT INTO audit_log (action, user_id, enterprise_id, details) VALUES (...)"
+
+outputs:
+  - status:
+      type: string
+      enum: ["success", "failed"]
+
+  - enterprise_id:
+      type: uuid
+      description: "ID созданного юрлица"
+
+  - enterprise:
+      type: object
+      description: "Полный объект созданного юрлица"
+
+  - errors:
+      type: array
+      nullable: true
+      description: "Список ошибок"
+
+events:
+  on_success:
+    - EnterpriseCreated.yaml
+  on_failure:
+    - EnterpriseCreationFailed.yaml
+
+examples:
+  - tenant_id: "660e8400-e29b-41d4-a716-446655440000"
+    name: "Общество с ограниченной ответственностью 'Ромашка'"
+    short_name: "ООО 'Ромашка'"
+    type: "ooo"
+    inn: "123456789012"
+    kpp: "123456789"
+    ogrn: "1234567890123"
+    legal_address: "г. Москва, ул. Тверская, д. 1, оф. 101"
+    tax_system: "usn_expenses"
+    registration_date: "2020-01-15"
+    director_name: "Иванов Иван Иванович"
+    bank_account:
+      account_number: "40702810100000000001"
+      bank_name: "Сбербанк"
+      bik: "044525225"
+      corr_account: "30101810400000000225"
+    is_primary: true
+    vat_registered: true
+    tags: ["основное"]

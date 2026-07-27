@@ -1,0 +1,124 @@
+# ============================================
+# Команда: Установить налоговую политику (Set Tax Policy)
+# ============================================
+name: "SetTaxPolicy"
+description: "Изменение системы налогообложения для юридического лица"
+version: "1.0.0"
+
+inputs:
+  - enterprise_id:
+      type: uuid
+      required: true
+      description: "ID юридического лица"
+
+  - user_id:
+      type: uuid
+      required: true
+      description: "ID пользователя, выполняющего операцию"
+
+  - tax_system:
+      type: string
+      required: true
+      enum: ["osno", "usn_income", "usn_expenses", "patent", "eshn", "self_employed"]
+      description: "Новая система налогообложения"
+
+  - vat_registered:
+      type: boolean
+      required: true
+      description: "Регистрация как плательщика НДС"
+
+  - effective_date:
+      type: date
+      required: true
+      description: "Дата перехода на новую систему"
+
+  - reason:
+      type: string
+      required: true
+      max_length: 500
+      description: "Причина изменения"
+      example: "Смена деятельности, переход на УСН"
+
+pre_conditions:
+  - "Юридическое лицо должно существовать"
+  - "У пользователя должно быть право 'enterprises.change_tax_policy'"
+  - "Дата перехода не должна быть в прошлом (если уже есть отчетность)"
+  - "Налоговая система должна быть валидной для типа юрлица"
+
+post_conditions:
+  - "Налоговая политика обновлена"
+  - "Запись в Audit Log"
+
+process:
+  steps:
+    - name: "ValidateEnterprise"
+      check: "Enterprise exists and status == 'active'"
+
+    - name: "ValidateTransition"
+      check: "Allowed transitions by type"
+      mappings:
+        ip:
+          - "osno"
+          - "usn_income"
+          - "usn_expenses"
+          - "patent"
+        ooo:
+          - "osno"
+          - "usn_income"
+          - "usn_expenses"
+        self_employed:
+          - "self_employed"
+
+    - name: "CheckActivePeriods"
+      check: "Нет открытых налоговых периодов для текущей системы"
+      on_fail: "Ошибка: есть незакрытые налоговые периоды"
+
+    - name: "UpdateTaxPolicy"
+      action: |
+        UPDATE legal_entities 
+        SET tax_system = '{tax_system}', 
+            vat_registered = '{vat_registered}',
+            updated_at = now()
+        WHERE id = '{enterprise_id}'
+
+    - name: "UpdateTaxSettings"
+      action: "UPDATE tax_settings SET tax_system = '{tax_system}', vat_registered = '{vat_registered}', effective_date = '{effective_date}' WHERE enterprise_id = '{enterprise_id}'"
+
+    - name: "NotifyIfTaxChange"
+      condition: "tax_system changes from OSNO to USN"
+      action: "SEND notification to accountant: 'Изменение системы налогообложения'"
+
+    - name: "LogAudit"
+      action: "INSERT INTO audit_log"
+
+outputs:
+  - status:
+      type: string
+      enum: ["success", "failed"]
+
+  - enterprise_id:
+      type: uuid
+
+  - previous_tax_system:
+      type: string
+
+  - new_tax_system:
+      type: string
+
+  - errors:
+      type: array
+      nullable: true
+
+events:
+  on_success:
+    - TaxPolicyChanged.yaml
+  on_failure:
+    - TaxPolicyChangeFailed.yaml
+
+examples:
+  - enterprise_id: "aa0e8400-e29b-41d4-a716-446655440000"
+    user_id: "550e8400-e29b-41d4-a716-446655440001"
+    tax_system: "usn_expenses"
+    vat_registered: true
+    effective_date: "2025-04-01"
+    reason: "Переход на УСН с 2 квартала 2025 года"
