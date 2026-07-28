@@ -1,0 +1,148 @@
+# ============================================
+# Документ: Договор (Contract)
+# ============================================
+version: "1.0.0"
+type: document
+name: "Contract"
+description: "Договор с клиентом"
+ 
+fields:
+  - id:
+      type: uuid
+      primary: true
+
+  - enterprise_id:
+      type: uuid
+      required: true
+      indexed: true
+
+  - tenant_id:
+      type: uuid
+      required: true
+      indexed: true
+
+  - opportunity_id:
+      type: uuid
+      nullable: true
+      description: "ID сделки"
+
+  - counterparty_id:
+      type: uuid
+      required: true
+      foreign_key: "counterparty.id"
+
+  - commercial_offer_id:
+      type: uuid
+      nullable: true
+      description: "ID коммерческого предложения"
+
+  - number:
+      type: string
+      required: true
+      description: "Номер договора"
+      example: "ДОГ-2025-001"
+
+  - date:
+      type: date
+      required: true
+      description: "Дата договора"
+      example: "2025-01-25"
+
+  - type:
+      type: string
+      required: true
+      enum: ["license", "service", "consulting", "integration", "custom"]
+      description: "Тип договора"
+      example: "license"
+
+  - name:
+      type: string
+      required: true
+      max_length: 300
+      description: "Название договора"
+      example: "Договор на внедрение ERP-системы"
+
+  - amount:
+      type: numeric
+      required: true
+      min: 0
+      description: "Сумма договора"
+      example: 1500000.00
+
+  - currency:
+      type: string
+      default: "RUB"
+
+  - payment_terms:
+      type: string
+      description: "Условия оплаты"
+      example: "100% предоплата"
+
+  - start_date:
+      type: date
+      required: true
+      description: "Дата начала"
+      example: "2025-02-01"
+
+  - end_date:
+      type: date
+      nullable: true
+      description: "Дата окончания"
+      example: "2026-02-01"
+
+  - status:
+      type: string
+      required: true
+      indexed: true
+      enum: ["draft", "pending", "signed", "active", "completed", "terminated"]
+      default: "draft"
+      description: "Статус договора"
+
+  - signed_at:
+      type: datetime
+      nullable: true
+
+  - signed_by_our:
+      type: string
+      nullable: true
+      description: "Кто подписал со стороны"
+
+  - signed_by_their:
+      type: string
+      nullable: true
+      description: "Кто подписал со стороны клиента"
+
+  - file_url:
+      type: string
+      nullable: true
+      description: "Ссылка на PDF/скан"
+
+  - created_at:
+      type: datetime
+      default: "now()"
+
+  - created_by:
+      type: uuid
+
+  - updated_at:
+      type: datetime
+      default: "now()"
+
+examples:
+  - id: "e10e8400-e29b-41d4-a716-446655440000"
+    enterprise_id: "aa0e8400-e29b-41d4-a716-446655440000"
+    tenant_id: "660e8400-e29b-41d4-a716-446655440000"
+    opportunity_id: "b10e8400-e29b-41d4-a716-446655440000"
+    counterparty_id: "cc0e8400-e29b-41d4-a716-446655440000"
+    commercial_offer_id: "d10e8400-e29b-41d4-a716-446655440000"
+    number: "ДОГ-2025-001"
+    date: "2025-01-25"
+    type: "license"
+    name: "Договор на внедрение ERP-системы"
+    amount: 1500000.00
+    currency: "RUB"
+    payment_terms: "50% предоплата, 50% после внедрения"
+    start_date: "2025-02-01"
+    end_date: "2026-02-01"
+    status: "signed"
+    signed_at: "2025-01-25T15:00:00Z"

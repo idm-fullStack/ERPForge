@@ -1,0 +1,90 @@
+# ============================================
+# Команда: Подать налоговую декларацию
+# ============================================
+name: "SubmitDeclaration"
+description: "Подача налоговой декларации в ФНС"
+version: "1.0.0"
+ 
+inputs:
+  - declaration_id:
+      type: uuid
+      required: true
+      description: "ID декларации"
+
+  - user_id:
+      type: uuid
+      required: true
+      description: "ID пользователя"
+
+  - submission_method:
+      type: string
+      required: true
+      enum: ["api", "web", "manual", "xml"]
+      default: "api"
+      description: "Способ подачи"
+
+  - external_system:
+      type: string
+      default: "fns"
+      description: "Внешняя система"
+      example: "fns"
+
+pre_conditions:
+  - "Декларация существует"
+  - "Декларация в статусе 'calculated'"
+  - "У пользователя есть право 'tax.submit'"
+
+post_conditions:
+  - "Декларация подана"
+  - "Налоговый период обновлен"
+  - "Запись в Audit Log"
+
+process:
+  steps:
+    - name: "ValidateDeclaration"
+      check: "declaration.status == 'calculated'"
+
+    - name: "ValidateData"
+      check: "Все поля заполнены и валидны"
+
+    - name: "GenerateXML"
+      action: "Сгенерировать XML файл по формату ФНС"
+
+    - name: "SendToFNS"
+      action: "Отправить через API ФНС (или пометить как подано вручную)"
+      on_fail: "Ошибка отправки"
+
+    - name: "UpdateDeclarationStatus"
+      action: "UPDATE declarations SET status = 'submitted', submitted_at = now()"
+
+    - name: "UpdateTaxPeriod"
+      action: "UPDATE tax_periods SET status = 'submitted', submitted_at = now()"
+
+    - name: "StoreExternalId"
+      condition: "submission_method == 'api'"
+      action: "Сохранить ID из ФНС"
+
+    - name: "LogAudit"
+      action: "Запись в Audit Log"
+
+outputs:
+  - status:
+      type: string
+      enum: ["success", "failed"]
+
+  - declaration_id:
+      type: uuid
+
+  - external_id:
+      type: string
+      nullable: true
+
+  - errors:
+      type: array
+      nullable: true
+
+events:
+  on_success:
+    - DeclarationSubmitted.yaml
+  on_failure:
+    - DeclarationSubmitFailed.yaml

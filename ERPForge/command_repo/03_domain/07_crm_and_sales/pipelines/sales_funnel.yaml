@@ -1,0 +1,82 @@
+# ============================================
+# Воронка продаж (Sales Funnel)
+# ============================================
+version: "1.0.0"
+type: pipeline
+name: "sales_funnel"
+description: "Воронка продаж по стадиям"
+
+stages:
+  - id: "new"
+    name: "Новые лиды"
+    description: "Лиды, требующие обработки"
+    next: ["contacted"]
+    conversion_rate: 80 
+
+  - id: "contacted"
+    name: "Контакты"
+    description: "Лиды, с которыми связались"
+    next: ["qualified", "unqualified"]
+    conversion_rate: 60
+
+  - id: "qualified"
+    name: "Квалифицированные"
+    description: "Квалифицированные лиды"
+    next: ["proposal"]
+    conversion_rate: 50
+
+  - id: "unqualified"
+    name: "Неквалифицированные"
+    description: "Отсеянные лиды"
+    next: []
+    conversion_rate: 0
+
+  - id: "proposal"
+    name: "Коммерческое предложение"
+    description: "Направлено КП"
+    next: ["negotiation"]
+    conversion_rate: 70
+
+  - id: "negotiation"
+    name: "Переговоры"
+    description: "Активные переговоры"
+    next: ["closed_won", "closed_lost"]
+    conversion_rate: 60
+
+  - id: "closed_won"
+    name: "Сделка выиграна"
+    description: "Успешно закрытые сделки"
+    next: []
+    conversion_rate: 100
+
+  - id: "closed_lost"
+    name: "Сделка проиграна"
+    description: "Проигранные сделки"
+    next: []
+    conversion_rate: 0
+
+metrics:
+  - name: "leads_in"
+    description: "Входящие лиды"
+    source: "leads"
+
+  - name: "conversion_rate"
+    description: "Общая конверсия"
+    formula: "closed_won / leads_in * 100"
+
+  - name: "avg_deal_time"
+    description: "Среднее время закрытия сделки"
+    unit: "days"
+
+thresholds:
+  - stage: "new"
+    alert_if_less_than: 10
+    action: "Увеличить генерацию лидов"
+
+  - stage: "qualified"
+    alert_if_less_than: 5
+    action: "Улучшить квалификацию"
+
+  - stage: "closed_won"
+    alert_if_less_than: 3
+    action: "Анализировать причины проигрышей"

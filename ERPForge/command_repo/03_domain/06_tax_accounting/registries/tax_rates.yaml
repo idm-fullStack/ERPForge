@@ -1,0 +1,199 @@
+# ============================================
+# Справочник: Налоговые ставки (Tax Rates)
+# ============================================
+version: "1.0.0"
+type: registry
+name: "tax_rates"
+description: "Справочник налоговых ставок для всех систем налогообложения"
+
+fields:
+  - id: 
+      type: uuid
+      primary: true
+      description: "Уникальный идентификатор"
+
+  - tax_system:
+      type: string
+      required: true
+      indexed: true
+      enum: ["osno", "usn_income", "usn_expenses", "patent", "eshn", "self_employed", "nds", "personal_income", "insurance"]
+      description: "Система налогообложения или тип налога"
+      example: "usn_expenses"
+
+  - tax_name:
+      type: string
+      required: true
+      description: "Название налога"
+      example: "Налог при УСН (Доходы минус расходы)"
+
+  - tax_code:
+      type: string
+      required: true
+      unique: true
+      description: "Код налога для отчетности"
+      example: "USN_EXPENSES_15"
+
+  - rate_type:
+      type: string
+      required: true
+      enum: ["percent", "fixed", "progressive"]
+      default: "percent"
+      description: "Тип ставки"
+
+  - rate_value:
+      type: numeric
+      required: true
+      min: 0
+      max: 100
+      description: "Значение ставки (в процентах или фиксированная сумма)"
+      example: 15.0
+
+  - rate_min:
+      type: numeric
+      nullable: true
+      description: "Минимальное значение (для прогрессивной шкалы)"
+      example: 5.0
+
+  - rate_max:
+      type: numeric
+      nullable: true
+      description: "Максимальное значение (для прогрессивной шкалы)"
+      example: 20.0
+
+  - threshold:
+      type: integer
+      nullable: true
+      description: "Порог дохода (для прогрессивной шкалы)"
+      example: 150000000
+
+  - base_type:
+      type: string
+      required: true
+      enum: ["income", "expenses", "profit", "revenue", "fixed", "employee_count", "area"]
+      description: "База для расчета налога"
+      example: "expenses"
+
+  - applies_to:
+      type: array
+      description: "Применяется к типам юрлиц"
+      items:
+        type: string
+        enum: ["ooo", "ao", "pao", "ip", "self_employed", "all"]
+      example: ["ooo", "ip"]
+
+  - region:
+      type: string
+      description: "Регион применения (локальный налог)"
+      example: "Москва"
+
+  - is_local:
+      type: boolean
+      default: false
+      description: "Местный налог"
+
+  - effective_from:
+      type: date
+      required: true
+      description: "Дата начала действия ставки"
+      example: "2024-01-01"
+
+  - effective_to:
+      type: date
+      nullable: true
+      description: "Дата окончания действия ставки"
+      example: "2024-12-31"
+
+  - is_active:
+      type: boolean
+      default: true
+      indexed: true
+
+  - description:
+      type: string
+      description: "Дополнительное описание"
+
+  - created_at:
+      type: datetime
+      default: "now()"
+
+  - updated_at:
+      type: datetime
+      default: "now()"
+
+validations:
+  - condition: "rate_type == 'progressive'"
+    require: "rate_min is not null and rate_max is not null and threshold is not null"
+    message: "Для прогрессивной ставки нужно указать min, max и порог"
+
+examples:
+  - id: "ea0e8400-e29b-41d4-a716-446655440000"
+    tax_system: "usn_expenses"
+    tax_name: "Налог при УСН (Доходы минус расходы)"
+    tax_code: "USN_EXPENSES_15"
+    rate_type: "percent"
+    rate_value: 15.0
+    base_type: "expenses"
+    applies_to: ["ooo", "ip"]
+    effective_from: "2024-01-01"
+    is_active: true
+    description: "Стандартная ставка 15% для УСН (Д-Р)"
+
+  - id: "ea0e8400-e29b-41d4-a716-446655440001"
+    tax_system: "usn_income"
+    tax_name: "Налог при УСН (Доходы)"
+    tax_code: "USN_INCOME_6"
+    rate_type: "percent"
+    rate_value: 6.0
+    base_type: "income"
+    applies_to: ["ooo", "ip"]
+    effective_from: "2024-01-01"
+    is_active: true
+    description: "Стандартная ставка 6% для УСН (Доходы)"
+
+  - id: "ea0e8400-e29b-41d4-a716-446655440002"
+    tax_system: "nds"
+    tax_name: "Налог на добавленную стоимость"
+    tax_code: "NDS_20"
+    rate_type: "percent"
+    rate_value: 20.0
+    base_type: "revenue"
+    applies_to: ["ooo", "ao", "pao", "ip"]
+    effective_from: "2019-01-01"
+    is_active: true
+    description: "Стандартная ставка НДС 20%"
+
+  - id: "ea0e8400-e29b-41d4-a716-446655440003"
+    tax_system: "nds"
+    tax_name: "НДС пониженная ставка"
+    tax_code: "NDS_10"
+    rate_type: "percent"
+    rate_value: 10.0
+    base_type: "revenue"
+    applies_to: ["ooo", "ao", "pao", "ip"]
+    effective_from: "2019-01-01"
+    is_active: true
+    description: "Пониженная ставка НДС 10% (продукты, детские товары)"
+
+  - id: "ea0e8400-e29b-41d4-a716-446655440004"
+    tax_system: "personal_income"
+    tax_name: "Налог на доходы физических лиц"
+    tax_code: "NDFL_13"
+    rate_type: "percent"
+    rate_value: 13.0
+    base_type: "income"
+    applies_to: ["all"]
+    effective_from: "2024-01-01"
+    is_active: true
+    description: "НДФЛ 13% для резидентов"
+
+  - id: "ea0e8400-e29b-41d4-a716-446655440005"
+    tax_system: "insurance"
+    tax_name: "Страховые взносы (ОПС)"
+    tax_code: "INSURANCE_22"
+    rate_type: "percent"
+    rate_value: 22.0
+    base_type: "income"
+    applies_to: ["all"]
+    effective_from: "2024-01-01"
+    is_active: true
+    description: "Страховые взносы на обязательное пенсионное страхование"

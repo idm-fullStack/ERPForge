@@ -1,0 +1,71 @@
+# ============================================
+# Событие: Налог рассчитан
+# ============================================
+name: "TaxCalculated"
+description: "Налог успешно рассчитан"
+version: "1.0.0"
+
+fields:
+  - event_id:
+      type: uuid
+      required: true
+
+  - enterprise_id: 
+      type: uuid
+      required: true
+
+  - tax_period_id:
+      type: uuid
+      required: true
+
+  - tax_system:
+      type: string
+      required: true
+      description: "Система налогообложения"
+
+  - taxable_base:
+      type: numeric
+      required: true
+
+  - tax_rate:
+      type: numeric
+      required: true
+
+  - tax_amount:
+      type: numeric
+      required: true
+
+  - tax_payable:
+      type: numeric
+      required: true
+
+  - declaration_id:
+      type: uuid
+      required: true
+
+  - calculated_by:
+      type: uuid
+      required: true
+
+  - calculated_at:
+      type: datetime
+      required: true
+
+reactions:
+  - "Создать налоговое обязательство (tax_liability)"
+  - "Обновить дашборды по налогам"
+  - "Отправить уведомление бухгалтеру"
+  - "Если сумма > порога → дополнительное уведомление"
+
+example:
+  event_id: "f0e8400-e29b-41d4-a716-446655440000"
+  enterprise_id: "aa0e8400-e29b-41d4-a716-446655440000"
+  tax_period_id: "eb0e8400-e29b-41d4-a716-446655440001"
+  tax_system: "usn_expenses"
+  taxable_base: 1500000.00
+  tax_rate: 15.0
+  tax_amount: 225000.00
+  tax_payable: 25000.00
+  declaration_id: "ec0e8400-e29b-41d4-a716-446655440000"
+  calculated_by: "550e8400-e29b-41d4-a716-446655440001"
+  calculated_at: "2025-03-25T10:00:00Z"
