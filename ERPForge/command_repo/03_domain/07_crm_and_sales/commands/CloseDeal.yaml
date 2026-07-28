@@ -1,0 +1,98 @@
+# ============================================
+# Команда: Закрыть сделку (Close Deal)
+# ============================================
+name: "CloseDeal"
+description: "Закрытие сделки с указанием результата (Win/Lose)"
+version: "1.0.0"
+ 
+inputs:
+  - opportunity_id:
+      type: uuid
+      required: true
+      description: "ID сделки"
+
+  - result:
+      type: string
+      required: true
+      enum: ["won", "lost"]
+      description: "Результат закрытия"
+
+  - close_date:
+      type: date
+      required: true
+      description: "Дата закрытия"
+
+  - reason:
+      type: string
+      required: true
+      description: "Причина закрытия"
+
+  - notes:
+      type: string
+      nullable: true
+
+pre_conditions:
+  - "Сделка существует"
+  - "Сделка не закрыта ранее"
+  - "У пользователя есть право 'opportunities.close'"
+
+post_conditions:
+  - "Сделка закрыта"
+  - "Обновлен статус сделки"
+  - "Если Win → создан договор/счет"
+
+process:
+  steps:
+    - name: "ValidateOpportunity"
+      check: "opportunity.stage not in ['closed_won', 'closed_lost']"
+      on_fail: "Ошибка: сделка уже закрыта"
+
+    - name: "UpdateOpportunity"
+      action: |
+        UPDATE opportunities 
+        SET stage = CASE 
+          WHEN '{result}' = 'won' THEN 'closed_won'
+          ELSE 'closed_lost'
+        END,
+        actual_close_date = '{close_date}',
+        close_reason = '{reason}',
+        updated_at = now()
+        WHERE id = '{opportunity_id}'
+
+    - name: "CreateContract"
+      condition: "result == 'won'"
+      action: "Создать договор на основе сделки"
+      depends_on: "opportunity.value"
+
+    - name: "CreateInvoice"
+      condition: "result == 'won'"
+      action: "Создать счет на оплату"
+
+    - name: "LogAudit"
+      action: "INSERT INTO audit_log"
+
+outputs:
+  - status:
+      type: string
+      enum: ["success", "failed"]
+
+  - opportunity_id:
+      type: uuid
+
+  - contract_id:
+      type: uuid
+      nullable: true
+
+  - invoice_id:
+      type: uuid
+      nullable: true
+
+  - errors:
+      type: array
+      nullable: true
+
+events:
+  on_success:
+    - DealWon.yaml
+  on_failure:
+    - DealLost.yaml

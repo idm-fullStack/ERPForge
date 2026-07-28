@@ -1,0 +1,187 @@
+# ============================================
+# Документ: Налоговая декларация (Tax Declaration)
+# ============================================
+version: "1.0.0"
+type: document
+name: "TaxDeclaration"
+description: "Налоговая декларация по УСН/ОСНО"
+
+fields: 
+  - id:
+      type: uuid
+      primary: true
+
+  - enterprise_id:
+      type: uuid
+      required: true
+      indexed: true
+      description: "ID юридического лица"
+
+  - tax_period_id:
+      type: uuid
+      required: true
+      foreign_key: "tax_periods.id"
+      description: "ID налогового периода"
+
+  - number:
+      type: string
+      required: true
+      description: "Номер декларации"
+      example: "ДЕК-2025-001"
+
+  - tax_system:
+      type: string
+      required: true
+      enum: ["osno", "usn_income", "usn_expenses", "eshn"]
+      description: "Система налогообложения"
+
+  - declaration_type:
+      type: string
+      required: true
+      enum: ["initial", "corrective", "liquidation"]
+      default: "initial"
+      description: "Тип декларации"
+
+  - corrective_number:
+      type: integer
+      nullable: true
+      description: "Номер корректировки"
+      example: 1
+
+  - period_start:
+      type: date
+      required: true
+      description: "Начало отчетного периода"
+
+  - period_end:
+      type: date
+      required: true
+      description: "Конец отчетного периода"
+
+  - income_total:
+      type: numeric
+      required: true
+      min: 0
+      description: "Доходы за период"
+      example: 1000000.00
+
+  - expenses_total:
+      type: numeric
+      min: 0
+      description: "Расходы за период (для УСН Д-Р)"
+      example: 500000.00
+
+  - taxable_base:
+      type: numeric
+      required: true
+      min: 0
+      description: "Налоговая база"
+      example: 500000.00
+
+  - tax_rate:
+      type: numeric
+      required: true
+      min: 0
+      description: "Ставка налога (%)"
+      example: 15.0
+
+  - tax_calculated:
+      type: numeric
+      required: true
+      min: 0
+      description: "Сумма налога"
+      example: 75000.00
+
+  - min_tax:
+      type: numeric
+      description: "Минимальный налог (1% от доходов)"
+      example: 10000.00
+
+  - tax_final:
+      type: numeric
+      required: true
+      min: 0
+      description: "Налог к уплате (max(налог, мин.налог))"
+      example: 75000.00
+
+  - prepaid_tax:
+      type: numeric
+      default: 0
+      description: "Авансовые платежи за период"
+      example: 50000.00
+
+  - tax_payable:
+      type: numeric
+      required: true
+      description: "Налог к доплате (налог - авансы)"
+      example: 25000.00
+
+  - status:
+      type: string
+      required: true
+      indexed: true
+      enum: ["draft", "calculated", "submitted", "accepted", "rejected"]
+      default: "draft"
+      description: "Статус декларации"
+
+  - submitted_at:
+      type: datetime
+      nullable: true
+      description: "Дата подачи"
+
+  - accepted_at:
+      type: datetime
+      nullable: true
+      description: "Дата принятия ФНС"
+
+  - rejection_reason:
+      type: string
+      nullable: true
+      description: "Причина отклонения"
+
+  - external_id:
+      type: string
+      nullable: true
+      description: "ID в системе ФНС"
+
+  - file_url:
+      type: string
+      nullable: true
+      description: "Ссылка на XML/PDF файл"
+
+  - created_at:
+      type: datetime
+      default: "now()"
+
+  - created_by:
+      type: uuid
+
+  - updated_at:
+      type: datetime
+      default: "now()"
+
+validations:
+  - condition: "declaration_type == 'corrective'"
+    require: "corrective_number is not null"
+    message: "Для корректирующей декларации нужно указать номер"
+
+examples:
+  - id: "ec0e8400-e29b-41d4-a716-446655440000"
+    enterprise_id: "aa0e8400-e29b-41d4-a716-446655440000"
+    tax_period_id: "eb0e8400-e29b-41d4-a716-446655440001"
+    number: "ДЕК-2025-001"
+    tax_system: "usn_expenses"
+    declaration_type: "initial"
+    period_start: "2024-01-01"
+    period_end: "2024-12-31"
+    income_total: 4000000.00
+    expenses_total: 2500000.00
+    taxable_base: 1500000.00
+    tax_rate: 15.0
+    tax_calculated: 225000.00
+    min_tax: 40000.00
+    tax_final: 225000.00
+    prepaid_tax: 200000.00
+    tax_payable: 25000.00
+    status: "submitted"
+    submitted_at: "2025-03-25T10:00:00Z"

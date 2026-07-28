@@ -1,0 +1,99 @@
+# ============================================
+# Регистр: Налоговые вычеты (Tax Credits)
+# ============================================
+version: "1.0.0"
+type: register
+name: "tax_credit"
+description: "Регистр налоговых вычетов (НДС, страховые взносы)"
+
+fields:
+  - id:
+      type: uuid
+      primary: true
+
+  - enterprise_id: 
+      type: uuid
+      required: true
+      indexed: true
+
+  - tax_period_id:
+      type: uuid
+      required: true
+      indexed: true
+
+  - credit_type:
+      type: string
+      required: true
+      enum: ["nds", "insurance", "property", "social", "investment"]
+      description: "Тип вычета"
+      example: "nds"
+
+  - credit_name:
+      type: string
+      required: true
+      description: "Название вычета"
+      example: "НДС к вычету"
+
+  - document_id:
+      type: uuid
+      nullable: true
+      description: "ID документа-основания"
+
+  - document_number:
+      type: string
+      description: "Номер документа"
+      example: "СЧФ-2025-001"
+
+  - amount:
+      type: numeric
+      required: true
+      min: 0
+      description: "Сумма вычета"
+      example: 26633.33
+
+  - amount_used:
+      type: numeric
+      default: 0
+      description: "Использованная сумма вычета"
+      example: 26633.33
+
+  - amount_remaining:
+      type: numeric
+      default: 0
+      description: "Остаток вычета"
+      example: 0.00
+
+  - status:
+      type: string
+      required: true
+      enum: ["available", "used", "expired"]
+      default: "available"
+      description: "Статус вычета"
+
+  - expiry_date:
+      type: date
+      nullable: true
+      description: "Срок действия вычета"
+      example: "2028-12-31"
+
+  - created_at:
+      type: datetime
+      default: "now()"
+
+  - updated_at:
+      type: datetime
+      default: "now()"
+
+examples:
+  - id: "ef0e8400-e29b-41d4-a716-446655440000"
+    enterprise_id: "aa0e8400-e29b-41d4-a716-446655440000"
+    tax_period_id: "eb0e8400-e29b-41d4-a716-446655440000"
+    credit_type: "nds"
+    credit_name: "НДС к вычету"
+    document_id: "ee0e8400-e29b-41d4-a716-446655440000"
+    document_number: "СЧФ-2025-001"
+    amount: 26633.33
+    amount_used: 26633.33
+    amount_remaining: 0.00
+    status: "used"
+    expiry_date: "2028-12-31"

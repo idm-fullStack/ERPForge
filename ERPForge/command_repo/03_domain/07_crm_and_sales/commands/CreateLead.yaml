@@ -1,0 +1,126 @@
+# ============================================
+# Команда: Создать лид (Create Lead)
+# ============================================
+name: "CreateLead"
+description: "Создание нового лида в CRM"
+version: "1.0.0"
+ 
+inputs:
+  - enterprise_id:
+      type: uuid
+      required: true
+
+  - tenant_id:
+      type: uuid
+      required: true
+
+  - assigned_to:
+      type: uuid
+      nullable: true
+
+  - source:
+      type: string
+      required: true
+      enum: ["website", "referral", "social", "email", "call", "event", "partner", "other"]
+
+  - first_name:
+      type: string
+      required: true
+      max_length: 100
+
+  - last_name:
+      type: string
+      required: true
+      max_length: 100
+
+  - middle_name:
+      type: string
+      nullable: true
+      max_length: 100
+
+  - email:
+      type: string
+      nullable: true
+      format: email
+
+  - phone:
+      type: string
+      nullable: true
+
+  - company_name:
+      type: string
+      nullable: true
+      max_length: 300
+
+  - company_inn:
+      type: string
+      nullable: true
+
+  - position:
+      type: string
+      nullable: true
+      max_length: 200
+
+  - budget:
+      type: numeric
+      nullable: true
+
+  - interest_level:
+      type: integer
+      nullable: true
+      min: 1
+      max: 10
+
+  - notes:
+      type: string
+      nullable: true
+
+  - tags:
+      type: array
+      items: { type: string }
+
+pre_conditions:
+  - "У пользователя есть право 'leads.create'"
+  - "Email или телефон должны быть указаны (хотя бы одно)"
+
+post_conditions:
+  - "Лид создан в статусе 'new'"
+  - "Запись в Audit Log"
+
+process:
+  steps:
+    - name: "ValidateInput"
+      check: "email or phone is not null"
+      on_fail: "Ошибка: нужно указать email или телефон"
+
+    - name: "CheckDuplicate"
+      check: "SELECT COUNT(*) FROM leads WHERE email = '{email}' OR phone = '{phone}'"
+      on_fail: "Ошибка: лид с такими данными уже существует"
+
+    - name: "CreateLead"
+      action: "INSERT INTO leads SET {...}"
+
+    - name: "LogAudit"
+      action: "INSERT INTO audit_log"
+
+    - name: "NotifyAssignment"
+      condition: "assigned_to is not null"
+      action: "Отправить уведомление менеджеру"
+
+outputs:
+  - status:
+      type: string
+      enum: ["success", "failed"]
+
+  - lead_id:
+      type: uuid
+
+  - errors:
+      type: array
+      nullable: true
+
+events:
+  on_success:
+    - LeadCreated.yaml
+  on_failure:
+    - LeadCreationFailed.yaml

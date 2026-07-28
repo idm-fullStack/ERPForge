@@ -1,0 +1,177 @@
+# ============================================
+# Справочник: Налоговые периоды (Tax Periods)
+# ============================================
+version: "1.0.0"
+type: registry
+name: "tax_periods"
+description: "Справочник налоговых периодов для отчетности"
+
+fields:
+  - id:
+      type: uuid
+      primary: true
+
+  - enterprise_id: 
+      type: uuid
+      required: true
+      indexed: true
+      description: "ID юридического лица"
+      foreign_key: "legal_entities.id"
+
+  - tax_system:
+      type: string
+      required: true
+      indexed: true
+      enum: ["osno", "usn_income", "usn_expenses", "patent", "eshn", "self_employed"]
+      description: "Система налогообложения"
+
+  - period_type:
+      type: string
+      required: true
+      enum: ["month", "quarter", "half_year", "nine_months", "year"]
+      description: "Тип периода"
+      example: "quarter"
+
+  - year:
+      type: integer
+      required: true
+      description: "Год"
+      example: 2025
+
+  - quarter:
+      type: integer
+      nullable: true
+      min: 1
+      max: 4
+      description: "Номер квартала"
+      example: 1
+
+  - month:
+      type: integer
+      nullable: true
+      min: 1
+      max: 12
+      description: "Номер месяца"
+      example: 1
+
+  - period_start:
+      type: date
+      required: true
+      description: "Начало периода"
+      example: "2025-01-01"
+
+  - period_end:
+      type: date
+      required: true
+      description: "Конец периода"
+      example: "2025-03-31"
+
+  - status:
+      type: string
+      required: true
+      indexed: true
+      enum: ["open", "calculated", "submitted", "paid", "closed", "overdue"]
+      description: "Статус периода"
+      example: "open"
+
+  - income_amount:
+      type: numeric
+      default: 0
+      description: "Сумма доходов за период"
+      example: 1000000.00
+
+  - expense_amount:
+      type: numeric
+      default: 0
+      description: "Сумма расходов за период"
+      example: 500000.00
+
+  - taxable_base:
+      type: numeric
+      default: 0
+      description: "Налоговая база"
+      example: 500000.00
+
+  - tax_calculated:
+      type: numeric
+      default: 0
+      description: "Сумма налога (расчетная)"
+      example: 75000.00
+
+  - tax_paid:
+      type: numeric
+      default: 0
+      description: "Сумма налога (оплаченная)"
+      example: 75000.00
+
+  - tax_due:
+      type: numeric
+      default: 0
+      description: "Задолженность по налогу"
+      example: 0.00
+
+  - submitted_at:
+      type: datetime
+      nullable: true
+      description: "Дата подачи декларации"
+
+  - paid_at:
+      type: datetime
+      nullable: true
+      description: "Дата оплаты налога"
+
+  - declaration_file:
+      type: string
+      nullable: true
+      description: "Ссылка на файл декларации"
+
+  - created_at:
+      type: datetime
+      default: "now()"
+
+  - updated_at:
+      type: datetime
+      default: "now()"
+
+validations:
+  - condition: "period_type == 'quarter'"
+    require: "quarter is not null"
+    message: "Для квартала нужно указать номер квартала"
+
+  - condition: "period_type == 'month'"
+    require: "month is not null"
+    message: "Для месяца нужно указать номер месяца"
+
+examples:
+  - id: "eb0e8400-e29b-41d4-a716-446655440000"
+    enterprise_id: "aa0e8400-e29b-41d4-a716-446655440000"
+    tax_system: "usn_expenses"
+    period_type: "quarter"
+    year: 2025
+    quarter: 1
+    period_start: "2025-01-01"
+    period_end: "2025-03-31"
+    status: "open"
+    income_amount: 0
+    expense_amount: 0
+    taxable_base: 0
+    tax_calculated: 0
+    tax_paid: 0
+    tax_due: 0
+
+  - id: "eb0e8400-e29b-41d4-a716-446655440001"
+    enterprise_id: "aa0e8400-e29b-41d4-a716-446655440000"
+    tax_system: "usn_expenses"
+    period_type: "year"
+    year: 2024
+    period_start: "2024-01-01"
+    period_end: "2024-12-31"
+    status: "closed"
+    income_amount: 4000000.00
+    expense_amount: 2500000.00
+    taxable_base: 1500000.00
+    tax_calculated: 225000.00
+    tax_paid: 225000.00
+    tax_due: 0
+    submitted_at: "2025-03-25T10:00:00Z"
+    paid_at: "2025-03-28T14:30:00Z"

@@ -1,0 +1,71 @@
+# ============================================
+# Событие: Сделка выиграна (Deal Won)
+# ============================================
+name: "DealWon"
+description: "Сделка успешно закрыта с результатом Win"
+version: "1.0.0"
+
+fields:
+  - event_id:
+      type: uuid
+      required: true
+
+  - opportunity_id:
+      type: uuid
+      required: true
+
+  - enterprise_id:
+      type: uuid
+      required: true
+
+  - tenant_id:
+      type: uuid
+      required: true
+
+  - value:
+      type: numeric
+      required: true
+
+  - currency:
+      type: string
+      required: true
+
+  - close_date:
+      type: date
+      required: true
+
+  - contract_id:
+      type: uuid 
+      nullable: true
+
+  - invoice_id:
+      type: uuid
+      nullable: true
+
+  - closed_by:
+      type: uuid
+      required: true
+
+  - closed_at:
+      type: datetime
+      required: true
+
+reactions:
+  - "Создать договор (если не создан)"
+  - "Создать счет на оплату"
+  - "Отправить уведомление команде"
+  - "Обновить отчеты по продажам"
+  - "Обновить воронку продаж"
+
+example:
+  event_id: "g10e8400-e29b-41d4-a716-446655440000"
+  opportunity_id: "b10e8400-e29b-41d4-a716-446655440000"
+  enterprise_id: "aa0e8400-e29b-41d4-a716-446655440000"
+  tenant_id: "660e8400-e29b-41d4-a716-446655440000"
+  value: 1500000.00
+  currency: "RUB"
+  close_date: "2025-03-31"
+  contract_id: "e10e8400-e29b-41d4-a716-446655440000"
+  invoice_id: null
+  closed_by: "550e8400-e29b-41d4-a716-446655440001"
+  closed_at: "2025-03-31T16:00:00Z"

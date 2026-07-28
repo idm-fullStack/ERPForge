@@ -1,0 +1,98 @@
+# ============================================
+# Команда: Конвертировать лид в сделку
+# ============================================
+name: "ConvertLeadToOpportunity"
+description: "Конвертация лида в сделку (Opportunity)"
+version: "1.0.0"
+ 
+inputs:
+  - lead_id:
+      type: uuid
+      required: true
+      description: "ID лида"
+
+  - opportunity_name:
+      type: string
+      required: true
+      max_length: 300
+      description: "Название сделки"
+
+  - value:
+      type: numeric
+      required: true
+      min: 0
+      description: "Сумма сделки"
+
+  - stage:
+      type: string
+      required: true
+      enum: ["prospecting", "qualification", "proposal", "negotiation"]
+
+  - probability:
+      type: integer
+      required: true
+      min: 0
+      max: 100
+      default: 20
+
+  - expected_close_date:
+      type: date
+      nullable: true
+
+  - notes:
+      type: string
+      nullable: true
+
+pre_conditions:
+  - "Лид существует"
+  - "Лид в статусе 'qualified' или 'new'"
+  - "Лид не конвертирован ранее"
+
+post_conditions:
+  - "Создана сделка (Opportunity)"
+  - "Лид обновлен: status → 'converted'"
+  - "Лид связан с созданной сделкой"
+  - "Запись в Audit Log"
+
+process:
+  steps:
+    - name: "ValidateLead"
+      check: "lead.status in ['new', 'qualified']"
+      on_fail: "Ошибка: лид уже конвертирован или неактивен"
+
+    - name: "CreateOpportunity"
+      action: |
+        INSERT INTO opportunities (
+          lead_id, name, value, stage, probability,
+          expected_close_date, notes, enterprise_id, tenant_id,
+          assigned_to, created_at
+        ) VALUES (...)
+
+    - name: "UpdateLead"
+      action: |
+        UPDATE leads 
+        SET status = 'converted', 
+            converted_to_opportunity_id = '{opportunity_id}',
+            updated_at = now()
+        WHERE id = '{lead_id}'
+
+    - name: "LogAudit"
+      action: "INSERT INTO audit_log"
+
+outputs:
+  - status:
+      type: string
+      enum: ["success", "failed"]
+
+  - opportunity_id:
+      type: uuid
+
+  - errors:
+      type: array
+      nullable: true
+
+events:
+  on_success:
+    - LeadConverted.yaml
+  on_failure:
+    - LeadConversionFailed.yaml

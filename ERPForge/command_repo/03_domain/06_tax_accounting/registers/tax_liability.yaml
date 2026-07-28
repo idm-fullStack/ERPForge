@@ -1,0 +1,105 @@
+# ============================================
+# Регистр: Налоговые обязательства (Tax Liability)
+# ============================================
+version: "1.0.0"
+type: register
+name: "tax_liability"
+description: "Регистр налоговых обязательств перед бюджетом"
+
+fields: 
+  - id:
+      type: uuid
+      primary: true
+
+  - enterprise_id:
+      type: uuid
+      required: true
+      indexed: true
+
+  - tax_period_id:
+      type: uuid
+      required: true
+      indexed: true
+
+  - tax_code:
+      type: string
+      required: true
+      description: "Код налога"
+      example: "USN_EXPENSES_15"
+
+  - tax_name:
+      type: string
+      required: true
+      description: "Название налога"
+      example: "Налог при УСН (Д-Р)"
+
+  - amount_calculated:
+      type: numeric
+      required: true
+      default: 0
+      description: "Расчетная сумма налога"
+      example: 75000.00
+
+  - amount_paid:
+      type: numeric
+      default: 0
+      description: "Оплаченная сумма"
+      example: 75000.00
+
+  - amount_due:
+      type: numeric
+      default: 0
+      description: "Задолженность"
+      example: 0.00
+
+  - penalties:
+      type: numeric
+      default: 0
+      description: "Пени и штрафы"
+      example: 0.00
+
+  - due_date:
+      type: date
+      required: true
+      description: "Срок уплаты"
+      example: "2025-04-28"
+
+  - status:
+      type: string
+      required: true
+      indexed: true
+      enum: ["pending", "paid", "overdue", "disputed"]
+      default: "pending"
+      description: "Статус обязательства"
+
+  - paid_at:
+      type: datetime
+      nullable: true
+
+  - payment_document:
+      type: string
+      nullable: true
+      description: "Номер платежного документа"
+
+  - created_at:
+      type: datetime
+      default: "now()"
+
+  - updated_at:
+      type: datetime
+      default: "now()"
+
+examples:
+  - id: "ee0e8400-e29b-41d4-a716-446655440000"
+    enterprise_id: "aa0e8400-e29b-41d4-a716-446655440000"
+    tax_period_id: "eb0e8400-e29b-41d4-a716-446655440001"
+    tax_code: "USN_EXPENSES_15"
+    tax_name: "Налог при УСН (Д-Р)"
+    amount_calculated: 75000.00
+    amount_paid: 75000.00
+    amount_due: 0.00
+    penalties: 0.00
+    due_date: "2025-04-28"
+    status: "paid"
+    paid_at: "2025-04-15T14:30:00Z"
+    payment_document: "ПП-2025-045"

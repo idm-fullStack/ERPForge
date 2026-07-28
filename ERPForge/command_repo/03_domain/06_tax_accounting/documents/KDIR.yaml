@@ -1,0 +1,117 @@
+# ============================================
+# Документ: Книга доходов и расходов (КДиР)
+# ============================================
+version: "1.0.0"
+type: document
+name: "KDIR"
+description: "Книга учета доходов и расходов для УСН"
+
+fields:
+  - id: 
+      type: uuid
+      primary: true
+
+  - enterprise_id:
+      type: uuid
+      required: true
+      indexed: true
+      description: "ID юридического лица"
+
+  - tax_period_id:
+      type: uuid
+      required: true
+      foreign_key: "tax_periods.id"
+      description: "ID налогового периода"
+
+  - year:
+      type: integer
+      required: true
+      description: "Год"
+      example: 2025
+
+  - tax_system:
+      type: string
+      required: true
+      enum: ["usn_income", "usn_expenses"]
+      description: "Система налогообложения"
+
+  - entries:
+      type: array
+      required: true
+      description: "Записи книги доходов и расходов"
+      items:
+        type: object
+        properties:
+          id: { type: string }
+          date: { type: date, required: true }
+          document_type: { type: string, required: true }
+          document_number: { type: string }
+          document_date: { type: date }
+          description: { type: string }
+          income_amount: { type: numeric, default: 0 }
+          expense_amount: { type: numeric, default: 0 }
+          vat_amount: { type: numeric, default: 0 }
+          counterparty: { type: string }
+          comment: { type: string }
+
+  - income_total:
+      type: numeric
+      required: true
+      description: "Итого доходов за период"
+      example: 4000000.00
+
+  - expenses_total:
+      type: numeric
+      required: true
+      description: "Итого расходов за период"
+      example: 2500000.00
+
+  - status:
+      type: string
+      required: true
+      enum: ["draft", "submitted", "archived"]
+      default: "draft"
+
+  - submitted_at:
+      type: datetime
+      nullable: true
+
+  - created_at:
+      type: datetime
+      default: "now()"
+
+  - updated_at:
+      type: datetime
+      default: "now()"
+
+examples:
+  - id: "ed0e8400-e29b-41d4-a716-446655440000"
+    enterprise_id: "aa0e8400-e29b-41d4-a716-446655440000"
+    tax_period_id: "eb0e8400-e29b-41d4-a716-446655440001"
+    year: 2024
+    tax_system: "usn_expenses"
+    entries:
+      - id: "entry-001"
+        date: "2024-01-15"
+        document_type: "SalesInvoice"
+        document_number: "СЧ-2024-001"
+        document_date: "2024-01-15"
+        description: "Реализация товаров ООО Ромашка"
+        income_amount: 159800.00
+        expense_amount: 0
+        vat_amount: 26633.33
+        counterparty: "ООО Ромашка"
+      - id: "entry-002"
+        date: "2024-01-20"
+        document_type: "PaymentOrder"
+        document_number: "ПП-2024-001"
+        document_date: "2024-01-20"
+        description: "Оплата поставщику за товары"
+        income_amount: 0
+        expense_amount: 65000.00
+        vat_amount: 10833.33
+        counterparty: "ООО ТехноПлюс"
+    income_total: 159800.00
+    expenses_total: 65000.00
+    status: "submitted"
+    submitted_at: "2025-03-25T10:00:00Z"

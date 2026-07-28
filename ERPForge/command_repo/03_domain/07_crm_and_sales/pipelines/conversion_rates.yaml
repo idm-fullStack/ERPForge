@@ -1,0 +1,79 @@
+# ============================================
+# Коэффициенты конверсии (Conversion Rates)
+# ============================================
+version: "1.0.0"
+type: analytics
+name: "conversion_rates"
+description: "Аналитика коэффициентов конверсии по этапам"
+
+metrics:
+  - name: "lead_to_contact"
+    description: "Лид → Контакт"
+    formula: "count(contacted) / count(new) * 100"
+    target: 80
+    color: "green"
+
+  - name: "contact_to_qualified"
+    description: "Контакт → Квалифицирован" 
+    formula: "count(qualified) / count(contacted) * 100"
+    target: 60
+    color: "green"
+
+  - name: "qualified_to_proposal"
+    description: "Квалифицирован → КП"
+    formula: "count(proposal) / count(qualified) * 100"
+    target: 50
+    color: "yellow"
+
+  - name: "proposal_to_negotiation"
+    description: "КП → Переговоры"
+    formula: "count(negotiation) / count(proposal) * 100"
+    target: 70
+    color: "green"
+
+  - name: "negotiation_to_close"
+    description: "Переговоры → Закрытие"
+    formula: "count(closed_won) / count(negotiation) * 100"
+    target: 60
+    color: "green"
+
+  - name: "overall_conversion"
+    description: "Общая конверсия"
+    formula: "count(closed_won) / count(new) * 100"
+    target: 20
+    color: "yellow"
+
+  - name: "win_rate"
+    description: "Win Rate"
+    formula: "count(closed_won) / (count(closed_won) + count(closed_lost)) * 100"
+    target: 40
+    color: "green"
+
+  - name: "avg_deal_size"
+    description: "Средний размер сделки"
+    formula: "sum(value) / count(closed_won)"
+    target: 1000000
+    color: "green"
+
+  - name: "avg_sales_cycle"
+    description: "Средний цикл продаж"
+    unit: "days"
+    formula: "avg(close_date - created_at) for closed_won"
+    target: 60
+    color: "yellow"
+
+trends:
+  - name: "weekly_leads"
+    period: "week"
+    type: "bar"
+    color: "blue"
+
+  - name: "monthly_revenue"
+    period: "month"
+    type: "line"
+    color: "green"
+
+  - name: "pipeline_value"
+    period: "current"
+    type: "funnel"
+    color: "blue"

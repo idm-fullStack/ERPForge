@@ -1,0 +1,74 @@
+# ============================================
+# Событие: Налог оплачен
+# ============================================
+name: "TaxPaid"
+description: "Налог успешно оплачен"
+version: "1.0.0"
+ 
+fields:
+  - event_id:
+      type: uuid
+      required: true
+
+  - enterprise_id:
+      type: uuid
+      required: true
+
+  - tax_period_id:
+      type: uuid
+      required: true
+
+  - tax_code:
+      type: string
+      required: true
+      description: "Код налога"
+      example: "USN_EXPENSES_15"
+
+  - tax_name:
+      type: string
+      required: true
+      description: "Название налога"
+      example: "Налог при УСН (Д-Р)"
+
+  - amount_paid:
+      type: numeric
+      required: true
+      description: "Сумма оплаты"
+
+  - payment_date:
+      type: date
+      required: true
+      description: "Дата оплаты"
+
+  - payment_document:
+      type: string
+      required: true
+      description: "Платежный документ"
+      example: "ПП-2025-045"
+
+  - paid_by:
+      type: uuid
+      required: true
+
+  - paid_at:
+      type: datetime
+      required: true
+
+reactions:
+  - "Обновить налоговое обязательство (status → 'paid')"
+  - "Обновить налоговый период (status → 'paid')"
+  - "Снять задолженность с tax_liability"
+  - "Отправить уведомление бухгалтеру"
+  - "Запись в Audit Log"
+
+example:
+  event_id: "f1e8400-e29b-41d4-a716-446655440000"
+  enterprise_id: "aa0e8400-e29b-41d4-a716-446655440000"
+  tax_period_id: "eb0e8400-e29b-41d4-a716-446655440001"
+  tax_code: "USN_EXPENSES_15"
+  tax_name: "Налог при УСН (Д-Р)"
+  amount_paid: 75000.00
+  payment_date: "2025-04-15"
+  payment_document: "ПП-2025-045"
+  paid_by: "550e8400-e29b-41d4-a716-446655440001"
+  paid_at: "2025-04-15T14:30:00Z"

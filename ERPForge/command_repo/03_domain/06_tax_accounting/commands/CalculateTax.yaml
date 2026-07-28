@@ -1,0 +1,119 @@
+# ============================================
+# Команда: Рассчитать налог (Calculate Tax)
+# ============================================
+name: "CalculateTax"
+description: "Расчет налогового обязательства по налоговому периоду"
+version: "1.0.0"
+
+inputs:
+  - enterprise_id:
+      type: uuid
+      required: true
+      description: "ID юридического лица"
+
+  - tax_period_id:
+      type: uuid
+      required: true
+      description: "ID налогового периода"
+
+  - user_id:
+      type: uuid
+      required: true
+      description: "ID пользователя"
+
+  - recalculate:
+      type: boolean
+      default: false
+      description: "Пересчитать даже если уже рассчитано"
+
+pre_conditions:
+  - "Юридическое лицо существует и активно"
+  - "Налоговый период существует и в статусе 'open'"
+  - "У пользователя есть право 'tax.calculate'"
+
+post_conditions:
+  - "Налог рассчитан"
+  - "Обновлен tax_period"
+  - "Создана налоговая декларация"
+
+process:
+  steps:
+    - name: "ValidateTaxPeriod"
+      check: "period.status == 'open' or recalculate == true"
+
+    - name: "GetEnterpriseData"
+      action: "Получить income/expenses за период из ledger_entries"
+
+    - name: "GetTaxSettings"
+      action: "Получить tax_system и ставку из legal_entities"
+
+    - name: "CalculateTaxBase"
+      action: |
+        if tax_system == 'usn_income':
+          taxable_base = total_income
+        elif tax_system == 'usn_expenses':
+          taxable_base = total_income - total_expenses
+          if taxable_base < 0: taxable_base = 0
+        elif tax_system == 'osno':
+          taxable_base = total_profit
+
+    - name: "ApplyTaxRate"
+      action: "tax_amount = taxable_base * tax_rate / 100"
+
+    - name: "CalculateMinTax"
+      condition: "tax_system == 'usn_expenses'"
+      action: "min_tax = total_income * 0.01"
+
+    - name: "CalculateFinalTax"
+      condition: "tax_system == 'usn_expenses'"
+      action: "final_tax = max(tax_amount, min_tax)"
+
+    - name: "CalculatePrepaidTax"
+      action: "prepaid_tax = sum(prepaid_tax_payments)"
+
+    - name: "CalculatePayable"
+      action: "tax_payable = final_tax - prepaid_tax"
+
+    - name: "CreateTaxDeclaration"
+      action: "Создать TaxDeclaration в статусе 'calculated'"
+
+    - name: "UpdateTaxPeriod"
+      action: "UPDATE tax_periods SET status = 'calculated', tax_calculated = {final_tax}"
+
+    - name: "CreateTaxLiability"
+      action: "INSERT INTO tax_liability SET amount_calculated = {final_tax}, due_date = {due_date}"
+
+    - name: "LogAudit"
+      action: "Запись в Audit Log"
+
+outputs:
+  - status:
+      type: string
+      enum: ["success", "failed"]
+
+  - tax_amount:
+      type: numeric
+      description: "Сумма налога"
+
+  - tax_payable:
+      type: numeric
+      description: "Сумма к доплате"
+
+  - declaration_id:
+      type: uuid
+
+  - errors:
+      type: array 
+      nullable: true
+
+events:
+  on_success:
+    - TaxCalculated.yaml
+  on_failure:
+    - TaxCalculationFailed.yaml
+
+examples:
+  - enterprise_id: "aa0e8400-e29b-41d4-a716-446655440000"
+    tax_period_id: "eb0e8400-e29b-41d4-a716-446655440001"
+    user_id: "550e8400-e29b-41d4-a716-446655440001"
+    recalculate: false
