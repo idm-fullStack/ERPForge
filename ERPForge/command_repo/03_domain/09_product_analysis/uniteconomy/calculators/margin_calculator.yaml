@@ -1,0 +1,66 @@
+# ============================================
+# Калькулятор: Маржинальность
+# ============================================
+name: "MarginCalculator"
+description: "Калькулятор маржинальности"
+version: "1.0.0"
+
+inputs:
+  - revenue:
+      type: numeric
+      required: true
+      description: "Выручка"
+
+  - cogs:
+      type: numeric
+      required: true
+      description: "Себестоимость проданных товаров"
+
+  - operating_costs:
+      type: numeric
+      default: 0
+      description: "Операционные расходы"
+
+formulas:
+  - name: "gross_margin_absolute"
+    formula: "revenue - cogs"
+
+  - name: "gross_margin_percent"
+    formula: "(revenue - cogs) / revenue * 100"
+
+  - name: "net_margin_absolute"
+    formula: "revenue - cogs - operating_costs"
+
+  - name: "net_margin_percent"
+    formula: "(revenue - cogs - operating_costs) / revenue * 100"
+
+  - name: "markup"
+    formula: "(revenue - cogs) / cogs * 100"
+
+outputs:
+  - gross_margin_absolute:
+      type: numeric
+
+  - gross_margin_percent:
+      type: numeric
+
+  - net_margin_absolute:
+      type: numeric
+
+  - net_margin_percent:
+      type: numeric
+
+  - markup_percent:
+      type: numeric
+
+example:
+  inputs:
+    revenue: 159800.00
+    cogs: 134000.00
+    operating_costs: 10000.00
+  outputs:
+    gross_margin_absolute: 25800.00
+    gross_margin_percent: 16.1
+    net_margin_absolute: 15800.00
+    net_margin_percent: 9.9
+    markup_percent: 19.3

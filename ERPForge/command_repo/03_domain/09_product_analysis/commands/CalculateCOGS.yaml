@@ -1,0 +1,110 @@
+# ============================================
+# Команда: Рассчитать себестоимость проданных товаров (COGS)
+# ============================================
+name: "CalculateCOGS"
+description: "Расчет себестоимости проданных товаров (Cost of Goods Sold)"
+version: "1.0.0"
+
+inputs:
+  - enterprise_id:
+      type: uuid
+      required: true
+      description: "ID юридического лица"
+
+  - period_start:
+      type: date
+      required: true
+      description: "Начало периода"
+
+  - period_end:
+      type: date
+      required: true
+      description: "Конец периода"
+
+  - method:
+      type: string
+      required: true
+      enum: ["fifo", "average", "lifo"]
+      default: "fifo"
+      description: "Метод расчета себестоимости"
+
+  - product_ids:
+      type: array
+      nullable: true
+      items: { type: uuid }
+      description: "Список товаров (если null - все)"
+
+pre_conditions:
+  - "Период не должен быть закрыт"
+  - "Должны быть данные о продажах"
+
+post_conditions:
+  - "COGS рассчитан и записан"
+  - "Обновлены проекции"
+
+process:
+  steps:
+    - name: "GetSalesData"
+      action: "SELECT * FROM sales_invoice WHERE date BETWEEN '{period_start}' AND '{period_end}'"
+
+    - name: "GetPurchaseData"
+      action: "SELECT * FROM purchase_invoice WHERE date BETWEEN '{period_start}' AND '{period_end}'"
+
+    - name: "CalculateFIFO"
+      condition: "method == 'fifo'"
+      action: |
+        FOR each product:
+          purchases = sorted_by_date(purchases)
+          sales = sorted_by_date(sales)
+          FOR each sale:
+            cost = consume_oldest_purchases(sale.quantity)
+            COGS += cost
+
+    - name: "CalculateAverage"
+      condition: "method == 'average'"
+      action: |
+        FOR each product:
+          avg_cost = total_purchase_cost / total_purchase_quantity
+          COGS = avg_cost * total_sales_quantity
+
+    - name: "WriteCOGS"
+      action: "INSERT INTO cogs_register (product_id, period, cogs_amount, method) VALUES (...)"
+
+    - name: "UpdateProductCost"
+      action: "UPDATE nomenclature SET cost = {avg_cost} WHERE id = '{product_id}'"
+
+outputs:
+  - status:
+      type: string
+      enum: ["success", "failed"]
+
+  - cogs_total:
+      type: numeric
+      description: "Общая себестоимость"
+
+  - cogs_by_product:
+      type: array
+      items:
+        type: object
+        properties:
+          product_id: { type: uuid }
+          product_name: { type: string }
+          quantity: { type: integer }
+          cogs: { type: numeric }
+
+  - errors:
+      type: array
+      nullable: true
+
+events:
+  on_success:
+    - CostOfGoodsCalculated.yaml
+  on_failure:
+    - COGSCalculationFailed.yaml
+
+examples:
+  - enterprise_id: "aa0e8400-e29b-41d4-a716-446655440000"
+    period_start: "2025-01-01"
+    period_end: "2025-01-31"
+    method: "fifo"
+    product_ids: null

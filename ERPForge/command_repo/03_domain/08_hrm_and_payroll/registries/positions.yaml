@@ -1,0 +1,125 @@
+# ============================================
+# Справочник: Должности (Positions)
+# ============================================
+version: "1.0.0"
+type: registry
+name: "positions"
+description: "Справочник должностей в компании"
+
+fields:
+  - id:
+      type: uuid
+      primary: true
+
+  - enterprise_id:
+      type: uuid
+      required: true
+      indexed: true
+
+  - tenant_id:
+      type: uuid
+      required: true
+      indexed: true
+
+  - department_id:
+      type: uuid
+      nullable: true
+      foreign_key: "departments.id"
+      description: "ID отдела"
+
+  - code:
+      type: string
+      required: true
+      unique: true
+      indexed: true
+      description: "Код должности"
+      example: "DIR"
+
+  - name:
+      type: string
+      required: true
+      max_length: 200
+      description: "Название должности"
+      example: "Генеральный директор"
+
+  - description:
+      type: string
+      description: "Описание должности"
+      example: "Руководство компанией"
+
+  - category:
+      type: string
+      required: true
+      indexed: true
+      enum: ["executive", "management", "specialist", "technical", "administrative", "intern"]
+      description: "Категория должности"
+      example: "executive"
+
+  - grade:
+      type: integer
+      nullable: true
+      description: "Грейд (уровень)"
+      example: 10
+
+  - min_salary:
+      type: numeric
+      min: 0
+      description: "Минимальный оклад"
+      example: 50000.00
+
+  - max_salary:
+      type: numeric
+      min: 0
+      description: "Максимальный оклад"
+      example: 100000.00
+
+  - default_salary:
+      type: numeric
+      description: "Оклад по умолчанию"
+      example: 70000.00
+
+  - report_to:
+      type: uuid
+      nullable: true
+      description: "ID должности руководителя"
+
+  - is_active:
+      type: boolean
+      default: true
+
+  - created_at:
+      type: datetime
+      default: "now()"
+
+  - updated_at:
+      type: datetime
+      default: "now()"
+
+examples:
+  - id: "i10e8400-e29b-41d4-a716-446655440000"
+    enterprise_id: "aa0e8400-e29b-41d4-a716-446655440000"
+    tenant_id: "660e8400-e29b-41d4-a716-446655440000"
+    department_id: "j10e8400-e29b-41d4-a716-446655440000"
+    code: "DIR"
+    name: "Генеральный директор"
+    description: "Руководство компанией"
+    category: "executive"
+    grade: 10
+    min_salary: 100000.00
+    max_salary: 200000.00
+    default_salary: 150000.00
+    is_active: true
+
+  - id: "i10e8400-e29b-41d4-a716-446655440001"
+    enterprise_id: "aa0e8400-e29b-41d4-a716-446655440000"
+    tenant_id: "660e8400-e29b-41d4-a716-446655440000"
+    department_id: "j10e8400-e29b-41d4-a716-446655440001"
+    code: "ACC"
+    name: "Главный бухгалтер"
+    description: "Ведение бухгалтерского учета"
+    category: "management"
+    grade: 8
+    min_salary: 60000.00
+    max_salary: 120000.00
+    default_salary: 80000.00
+    is_active: true

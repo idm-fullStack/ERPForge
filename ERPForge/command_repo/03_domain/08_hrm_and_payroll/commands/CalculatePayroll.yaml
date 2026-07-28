@@ -1,0 +1,103 @@
+# ============================================
+# Команда: Рассчитать зарплату (Calculate Payroll)
+# ============================================
+name: "CalculatePayroll"
+description: "Расчет заработной платы для сотрудника или всего отдела"
+version: "1.0.0"
+
+inputs:
+  - enterprise_id:
+      type: uuid
+      required: true
+
+  - tenant_id:
+      type: uuid
+      required: true
+
+  - employee_id:
+      type: uuid
+      nullable: true
+      description: "ID сотрудника (если null - расчет для всех)"
+
+  - period_start:
+      type: date
+      required: true
+
+  - period_end:
+      type: date
+      required: true
+
+  - calculate_all:
+      type: boolean
+      default: false
+      description: "Рассчитать для всех сотрудников"
+
+pre_conditions:
+  - "У пользователя есть право 'payroll.calculate'"
+  - "Период не закрыт для начислений"
+
+post_conditions:
+  - "Созданы документы Payroll"
+  - "Созданы записи в salary_register"
+  - "Запись в Audit Log"
+
+process:
+  steps:
+    - name: "ValidatePeriod"
+      check: "period_end <= current_date"
+      on_fail: "Ошибка: период не может быть в будущем"
+
+    - name: "GetEmployees"
+      action: |
+        IF employee_id IS NULL:
+          SELECT * FROM employees WHERE status = 'active'
+        ELSE:
+          SELECT * FROM employees WHERE id = '{employee_id}'
+
+    - name: "ForEachEmployee"
+      steps:
+        - name: "GetTimesheet"
+          action: "SELECT * FROM timesheet WHERE employee_id = '{id}' AND period_start = '{period_start}'"
+
+        - name: "CalculateSalary"
+          action: |
+            salary_calculated = base_salary / working_days * worked_days
+            total_accrued = salary_calculated + bonuses + overtime + vacation_pay + sick_pay
+            ndfl = total_accrued * 0.13
+            amount_to_pay = total_accrued - ndfl - deductions
+
+        - name: "CreatePayroll"
+          action: "INSERT INTO payroll SET {...}"
+
+        - name: "CreateSalaryRegister"
+          action: "INSERT INTO salary_register SET {...}"
+
+    - name: "LogAudit"
+      action: "INSERT INTO audit_log"
+
+outputs:
+  - status:
+      type: string
+      enum: ["success", "failed"]
+
+  - payroll_ids:
+      type: array
+      description: "Список ID созданных документов"
+
+  - total_accrued:
+      type: numeric
+      description: "Итого начислено"
+
+  - total_to_pay:
+      type: numeric
+      description: "Итого к выплате"
+
+  - errors:
+      type: array
+      nullable: true
+
+events:
+  on_success:
+    - SalaryCalculated.yaml
+  on_failure:
+    - SalaryCalculationFailed.yaml

@@ -1,0 +1,107 @@
+# ============================================
+# Регистр: Штатное расписание (Staff Register)
+# ============================================
+version: "1.0.0"
+type: register
+name: "staff_register"
+description: "Регистр штатного расписания"
+
+fields:
+  - id:
+      type: uuid
+      primary: true
+
+  - enterprise_id:
+      type: uuid
+      required: true
+      indexed: true
+
+  - tenant_id:
+      type: uuid
+      required: true
+      indexed: true
+
+  - position_id:
+      type: uuid
+      required: true
+      foreign_key: "positions.id"
+
+  - department_id:
+      type: uuid
+      required: true
+      foreign_key: "departments.id"
+
+  - employee_id:
+      type: uuid
+      nullable: true
+      foreign_key: "employees.id"
+      description: "Занимающий сотрудник (если есть)"
+
+  - units:
+      type: integer
+      required: true
+      min: 1
+      description: "Количество штатных единиц"
+      example: 2
+
+  - units_filled:
+      type: integer
+      default: 0
+      description: "Заполненных единиц"
+      example: 1
+
+  - units_vacant:
+      type: integer
+      default: 0
+      description: "Вакантных единиц"
+      example: 1
+
+  - salary:
+      type: numeric
+      required: true
+      min: 0
+      description: "Оклад по штату"
+      example: 50000.00
+
+  - total_fund:
+      type: numeric
+      description: "Итого ФОТ по позиции (units * salary)"
+      example: 100000.00
+
+  - effective_from:
+      type: date
+      required: true
+      description: "Дата ввода"
+      example: "2025-01-01"
+
+  - effective_to:
+      type: date
+      nullable: true
+      description: "Дата вывода"
+
+  - is_active:
+      type: boolean
+      default: true
+
+  - created_at:
+      type: datetime
+      default: "now()"
+
+  - updated_at:
+      type: datetime
+      default: "now()"
+
+examples:
+  - id: "o10e8400-e29b-41d4-a716-446655440000"
+    enterprise_id: "aa0e8400-e29b-41d4-a716-446655440000"
+    tenant_id: "660e8400-e29b-41d4-a716-446655440000"
+    position_id: "i10e8400-e29b-41d4-a716-446655440000"
+    department_id: "j10e8400-e29b-41d4-a716-446655440000"
+    employee_id: "h10e8400-e29b-41d4-a716-446655440000"
+    units: 1
+    units_filled: 1
+    units_vacant: 0
+    salary: 150000.00
+    total_fund: 150000.00
+    effective_from: "2025-01-01"
+    is_active: true

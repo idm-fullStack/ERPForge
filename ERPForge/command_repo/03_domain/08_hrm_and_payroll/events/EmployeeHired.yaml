@@ -1,0 +1,69 @@
+# ============================================
+# Событие: Сотрудник принят
+# ============================================
+name: "EmployeeHired"
+description: "Новый сотрудник принят на работу"
+version: "1.0.0"
+
+fields:
+  - event_id:
+      type: uuid
+      required: true
+
+  - employee_id:
+      type: uuid
+      required: true
+
+  - enterprise_id:
+      type: uuid
+      required: true
+
+  - tenant_id:
+      type: uuid
+      required: true
+
+  - department_id:
+      type: uuid
+      required: true
+
+  - position_id:
+      type: uuid
+      required: true
+
+  - full_name:
+      type: string
+      required: true
+
+  - hire_date:
+      type: date
+      required: true
+
+  - salary_amount:
+      type: numeric
+      required: true
+
+  - hired_by:
+      type: uuid
+      required: true
+
+  - hired_at:
+      type: datetime
+      required: true
+
+reactions:
+  - "Обновить штатное расписание"
+  - "Отправить уведомление в HR"
+  - "Запись в Audit Log"
+
+example:
+  event_id: "p10e8400-e29b-41d4-a716-446655440000"
+  employee_id: "h10e8400-e29b-41d4-a716-446655440000"
+  enterprise_id: "aa0e8400-e29b-41d4-a716-446655440000"
+  tenant_id: "660e8400-e29b-41d4-a716-446655440000"
+  department_id: "j10e8400-e29b-41d4-a716-446655440000"
+  position_id: "i10e8400-e29b-41d4-a716-446655440000"
+  full_name: "Иванов Иван Сергеевич"
+  hire_date: "2020-01-15"
+  salary_amount: 50000.00
+  hired_by: "550e8400-e29b-41d4-a716-446655440001"
+  hired_at: "2020-01-15T10:00:00Z"

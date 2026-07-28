@@ -1,0 +1,89 @@
+# ============================================
+# Сценарий: Изменение CAC
+# ============================================
+name: "CACChangeScenario"
+description: "Сценарное моделирование изменения CAC"
+version: "1.0.0"
+
+inputs:
+  - enterprise_id:
+      type: uuid
+      required: true
+
+  - current_cac:
+      type: numeric
+      required: true
+
+  - current_ltv:
+      type: numeric
+      required: true
+
+  - current_new_customers:
+      type: integer
+      required: true
+
+  - target_cac:
+      type: numeric
+      required: true
+
+  - marketing_spend_impact:
+      type: numeric
+      default: 0
+      description: "Изменение маркетинговых расходов"
+
+calculations:
+  - name: "cac_change_percent"
+    formula: "(target_cac - current_cac) / current_cac * 100"
+
+  - name: "ltv_cac_ratio_current"
+    formula: "current_ltv / current_cac"
+
+  - name: "ltv_cac_ratio_target"
+    formula: "current_ltv / target_cac"
+
+  - name: "savings_current"
+    formula: "current_cac * current_new_customers"
+
+  - name: "savings_target"
+    formula: "target_cac * current_new_customers"
+
+  - name: "savings_delta"
+    formula: "savings_current - savings_target"
+
+outputs:
+  - cac_change_percent:
+      type: numeric
+
+  - ltv_cac_ratio_current:
+      type: numeric
+
+  - ltv_cac_ratio_target:
+      type: numeric
+
+  - ratio_improvement:
+      type: numeric
+
+  - savings_delta:
+      type: numeric
+
+  - monthly_savings:
+      type: numeric
+
+  - recommendation:
+      type: string
+
+example:
+  inputs:
+    enterprise_id: "aa0e8400-e29b-41d4-a716-446655440000"
+    current_cac: 15000.00
+    current_ltv: 45000.00
+    current_new_customers: 10
+    target_cac: 10000.00
+  outputs:
+    cac_change_percent: -33.3
+    ltv_cac_ratio_current: 3.0
+    ltv_cac_ratio_target: 4.5
+    ratio_improvement: 1.5
+    savings_delta: 50000.00
+    monthly_savings: 4166.67
+    recommendation: "invest_in_referral_program"

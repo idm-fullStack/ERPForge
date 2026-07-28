@@ -1,0 +1,59 @@
+# ============================================
+# Событие: Сотрудник уволен
+# ============================================
+name: "EmployeeFired"
+description: "Сотрудник уволен"
+version: "1.0.0"
+
+fields:
+  - event_id:
+      type: uuid
+      required: true
+
+  - employee_id:
+      type: uuid
+      required: true
+
+  - enterprise_id:
+      type: uuid
+      required: true
+
+  - tenant_id:
+      type: uuid
+      required: true
+
+  - full_name:
+      type: string
+      required: true
+
+  - fired_date:
+      type: date
+      required: true
+
+  - reason:
+      type: string
+      required: true
+
+  - fired_by:
+      type: uuid
+      required: true
+
+  - fired_at:
+      type: datetime
+      required: true
+
+reactions:
+  - "Обновить штатное расписание"
+  - "Отправить уведомление в HR"
+  - "Запись в Audit Log"
+
+example:
+  event_id: "p11e8400-e29b-41d4-a716-446655440000"
+  employee_id: "h10e8400-e29b-41d4-a716-446655440001"
+  enterprise_id: "aa0e8400-e29b-41d4-a716-446655440000"
+  tenant_id: "660e8400-e29b-41d4-a716-446655440000"
+  full_name: "Петров Петр Петрович"
+  fired_date: "2025-03-15"
+  reason: "own_will"
+  fired_by: "550e8400-e29b-41d4-a716-446655440001"
+  fired_at: "2025-03-15T16:00:00Z"

@@ -1,0 +1,126 @@
+# ============================================
+# Регистр: Зарплатный регистр (Salary Register)
+# ============================================
+version: "1.0.0"
+type: register
+name: "salary_register"
+description: "Регистр учета начислений зарплаты"
+
+fields:
+  - id:
+      type: uuid
+      primary: true
+
+  - enterprise_id:
+      type: uuid
+      required: true
+      indexed: true
+
+  - tenant_id:
+      type: uuid
+      required: true
+      indexed: true
+
+  - employee_id:
+      type: uuid
+      required: true
+      indexed: true
+      foreign_key: "employees.id"
+
+  - period:
+      type: string
+      required: true
+      indexed: true
+      description: "Период начисления (YYYY-MM)"
+      example: "2025-01"
+
+  - payroll_id:
+      type: uuid
+      foreign_key: "payroll.id"
+      description: "ID документа начисления"
+
+  - base_salary:
+      type: numeric
+      default: 0
+      description: "Базовый оклад"
+      example: 50000.00
+
+  - bonuses:
+      type: numeric
+      default: 0
+      description: "Премии"
+      example: 5000.00
+
+  - overtime:
+      type: numeric
+      default: 0
+      description: "Сверхурочные"
+      example: 1000.00
+
+  - vacation_pay:
+      type: numeric
+      default: 0
+      description: "Отпускные"
+      example: 0.00
+
+  - sick_pay:
+      type: numeric
+      default: 0
+      description: "Больничный"
+      example: 0.00
+
+  - business_trip:
+      type: numeric
+      default: 0
+      description: "Командировочные"
+      example: 0.00
+
+  - total_accrued:
+      type: numeric
+      required: true
+      description: "Всего начислено"
+      example: 51454.55
+
+  - ndfl:
+      type: numeric
+      required: true
+      description: "НДФЛ"
+      example: 6689.09
+
+  - amount_to_pay:
+      type: numeric
+      required: true
+      description: "К выплате"
+      example: 44765.46
+
+  - payment_date:
+      type: date
+      nullable: true
+
+  - status:
+      type: string
+      enum: ["calculated", "paid"]
+      default: "calculated"
+
+  - created_at:
+      type: datetime
+      default: "now()"
+
+examples:
+  - id: "n10e8400-e29b-41d4-a716-446655440000"
+    enterprise_id: "aa0e8400-e29b-41d4-a716-446655440000"
+    tenant_id: "660e8400-e29b-41d4-a716-446655440000"
+    employee_id: "h10e8400-e29b-41d4-a716-446655440000"
+    period: "2025-01"
+    payroll_id: "l10e8400-e29b-41d4-a716-446655440000"
+    base_salary: 50000.00
+    bonuses: 5000.00
+    overtime: 1000.00
+    vacation_pay: 0.00
+    sick_pay: 0.00
+    business_trip: 0.00
+    total_accrued: 51454.55
+    ndfl: 6689.09
+    amount_to_pay: 44765.46
+    payment_date: "2025-02-05"
+    status: "paid"

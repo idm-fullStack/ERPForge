@@ -1,0 +1,102 @@
+# ============================================
+# Сценарий: Изменение цены
+# ============================================
+name: "PriceChangeScenario"
+description: "Сценарное моделирование изменения цены"
+version: "1.0.0"
+
+inputs:
+  - product_id:
+      type: uuid
+      required: true
+
+  - current_price:
+      type: numeric
+      required: true
+
+  - current_cogs:
+      type: numeric
+      required: true
+
+  - current_sales_volume:
+      type: integer
+      required: true
+
+  - new_price:
+      type: numeric
+      required: true
+
+  - elasticity:
+      type: numeric
+      default: -1.5
+      description: "Эластичность спроса"
+
+calculations:
+  - name: "price_change_percent"
+    formula: "(new_price - current_price) / current_price * 100"
+
+  - name: "volume_change_percent"
+    formula: "price_change_percent * elasticity"
+
+  - name: "new_sales_volume"
+    formula: "current_sales_volume * (1 + volume_change_percent / 100)"
+
+  - name: "current_revenue"
+    formula: "current_price * current_sales_volume"
+
+  - name: "new_revenue"
+    formula: "new_price * new_sales_volume"
+
+  - name: "current_margin"
+    formula: "(current_price - current_cogs) / current_price * 100"
+
+  - name: "new_margin"
+    formula: "(new_price - current_cogs) / new_price * 100"
+
+outputs:
+  - price_change_percent:
+      type: numeric
+
+  - volume_change_percent:
+      type: numeric
+
+  - current_revenue:
+      type: numeric
+
+  - new_revenue:
+      type: numeric
+
+  - revenue_delta:
+      type: numeric
+
+  - current_margin_percent:
+      type: numeric
+
+  - new_margin_percent:
+      type: numeric
+
+  - margin_change:
+      type: numeric
+
+  - recommendation:
+      type: string
+      enum: ["increase", "decrease", "keep"]
+
+example:
+  inputs:
+    product_id: "dd0e8400-e29b-41d4-a716-446655440000"
+    current_price: 79900.00
+    current_cogs: 67000.00
+    current_sales_volume: 100
+    new_price: 89900.00
+    elasticity: -1.5
+  outputs:
+    price_change_percent: 12.5
+    volume_change_percent: -18.75
+    current_revenue: 7990000.00
+    new_revenue: 7306125.00
+    revenue_delta: -683875.00
+    current_margin_percent: 16.1
+    new_margin_percent: 25.5
+    margin_change: 9.4
+    recommendation: "increase"

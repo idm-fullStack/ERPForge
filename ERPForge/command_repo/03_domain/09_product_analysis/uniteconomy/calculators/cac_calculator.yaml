@@ -1,0 +1,78 @@
+# ============================================
+# Калькулятор: CAC (Customer Acquisition Cost)
+# ============================================
+name: "CACCalculator"
+description: "Калькулятор стоимости привлечения клиента"
+version: "1.0.0"
+
+inputs:
+  - marketing_spend_total:
+      type: numeric
+      required: true
+      description: "Общие расходы на маркетинг"
+
+  - new_customers:
+      type: integer
+      required: true
+      description: "Количество новых клиентов"
+
+  - marketing_channels:
+      type: array
+      items:
+        type: object
+        properties:
+          channel: { type: string }
+          spend: { type: numeric }
+          customers: { type: integer }
+
+formulas:
+  - name: "cac_total"
+    formula: "marketing_spend_total / new_customers"
+
+  - name: "cac_by_channel"
+    formula: "FOR each channel: channel.spend / channel.customers"
+
+  - name: "cac_payback_months"
+    formula: "cac_total / (avg_monthly_revenue_per_customer - avg_monthly_cogs_per_customer)"
+
+outputs:
+  - cac_total:
+      type: numeric
+      description: "Общий CAC"
+
+  - cac_by_channel:
+      type: array
+      items:
+        type: object
+        properties:
+          channel: { type: string }
+          cac: { type: numeric }
+
+  - payback_months:
+      type: integer
+      description: "Срок окупаемости CAC"
+
+example:
+  inputs:
+    marketing_spend_total: 150000.00
+    new_customers: 10
+    marketing_channels:
+      - channel: "google_ads"
+        spend: 50000.00
+        customers: 3
+      - channel: "referral"
+        spend: 10000.00
+        customers: 4
+      - channel: "social_media"
+        spend: 90000.00
+        customers: 3
+  outputs:
+    cac_total: 15000.00
+    cac_by_channel:
+      - channel: "google_ads"
+        cac: 16666.67
+      - channel: "referral"
+        cac: 2500.00
+      - channel: "social_media"
+        cac: 30000.00
+    payback_months: 4

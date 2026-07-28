@@ -1,0 +1,79 @@
+# ============================================
+# Команда: Уволить сотрудника (Fire Employee)
+# ============================================
+name: "FireEmployee"
+description: "Увольнение сотрудника"
+version: "1.0.0"
+
+inputs:
+  - employee_id:
+      type: uuid
+      required: true
+
+  - fired_date:
+      type: date
+      required: true
+
+  - reason:
+      type: string
+      required: true
+      enum: ["own_will", "agreement", "violation", "staff_reduction", "retirement", "probation_failed", "other"]
+      description: "Причина увольнения"
+
+  - reason_detail:
+      type: string
+      nullable: true
+      max_length: 500
+      description: "Детали причины"
+
+pre_conditions:
+  - "Сотрудник существует"
+  - "Сотрудник в статусе 'active'"
+  - "У пользователя есть право 'employees.fire'"
+
+post_conditions:
+  - "Сотрудник переведен в статус 'fired'"
+  - "Обновлено штатное расписание"
+  - "Запись в Audit Log"
+
+process:
+  steps:
+    - name: "ValidateEmployee"
+      check: "employee.status == 'active'"
+      on_fail: "Ошибка: сотрудник уже уволен"
+
+    - name: "CheckDependencies"
+      check: "Нет незакрытых документов (Payroll, Vacation)"
+
+    - name: "UpdateEmployee"
+      action: |
+        UPDATE employees 
+        SET status = 'fired', 
+            fired_date = '{fired_date}', 
+            fired_reason = '{reason}',
+            updated_at = now()
+        WHERE id = '{employee_id}'
+
+    - name: "UpdateStaffRegister"
+      action: "UPDATE staff_register SET units_filled = units_filled - 1 WHERE employee_id = '{employee_id}'"
+
+    - name: "LogAudit"
+      action: "INSERT INTO audit_log"
+
+outputs:
+  - status:
+      type: string
+      enum: ["success", "failed"]
+
+  - employee_id:
+      type: uuid
+
+  - errors:
+      type: array
+      nullable: true
+
+events:
+  on_success:
+    - EmployeeFired.yaml
+  on_failure:
+    - EmployeeFireFailed.yaml

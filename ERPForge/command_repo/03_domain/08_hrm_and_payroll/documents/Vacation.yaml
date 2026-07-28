@@ -1,0 +1,109 @@
+# ============================================
+# Документ: Отпуск (Vacation)
+# ============================================
+version: "1.0.0"
+type: document
+name: "Vacation"
+description: "Заявление на отпуск"
+
+fields:
+  - id:
+      type: uuid
+      primary: true
+
+  - enterprise_id:
+      type: uuid
+      required: true
+      indexed: true
+
+  - tenant_id:
+      type: uuid
+      required: true
+      indexed: true
+
+  - employee_id:
+      type: uuid
+      required: true
+      foreign_key: "employees.id"
+
+  - number:
+      type: string
+      required: true
+      description: "Номер заявления"
+      example: "В-2025-001"
+
+  - vacation_type:
+      type: string
+      required: true
+      enum: ["annual", "additional", "educational", "maternity", "unpaid", "sick"]
+      description: "Тип отпуска"
+      example: "annual"
+
+  - start_date:
+      type: date
+      required: true
+      description: "Дата начала"
+      example: "2025-07-01"
+
+  - end_date:
+      type: date
+      required: true
+      description: "Дата окончания"
+      example: "2025-07-14"
+
+  - days_count:
+      type: integer
+      required: true
+      description: "Количество дней"
+      example: 14
+
+  - reason:
+      type: string
+      description: "Причина (для доп. отпуска)"
+      example: "Семейные обстоятельства"
+
+  - status:
+      type: string
+      required: true
+      indexed: true
+      enum: ["draft", "submitted", "approved", "rejected", "cancelled"]
+      default: "draft"
+
+  - submitted_at:
+      type: datetime
+      nullable: true
+
+  - approved_at:
+      type: datetime
+      nullable: true
+
+  - approved_by:
+      type: uuid
+      nullable: true
+
+  - rejection_reason:
+      type: string
+      nullable: true
+
+  - created_at:
+      type: datetime
+      default: "now()"
+
+  - updated_at:
+      type: datetime
+      default: "now()"
+
+examples:
+  - id: "m10e8400-e29b-41d4-a716-446655440000"
+    enterprise_id: "aa0e8400-e29b-41d4-a716-446655440000"
+    tenant_id: "660e8400-e29b-41d4-a716-446655440000"
+    employee_id: "h10e8400-e29b-41d4-a716-446655440000"
+    number: "В-2025-001"
+    vacation_type: "annual"
+    start_date: "2025-07-01"
+    end_date: "2025-07-14"
+    days_count: 14
+    status: "approved"
+    submitted_at: "2025-06-15T10:00:00Z"
+    approved_at: "2025-06-16T14:00:00Z"
+    approved_by: "550e8400-e29b-41d4-a716-446655440002"

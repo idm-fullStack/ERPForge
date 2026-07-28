@@ -1,0 +1,65 @@
+# ============================================
+# Событие: Алерт о падении маржинальности
+# ============================================
+name: "MarginDroppedAlert"
+description: "Маржинальность упала ниже критического порога"
+version: "1.0.0"
+
+fields:
+  - event_id:
+      type: uuid
+      required: true
+
+  - enterprise_id:
+      type: uuid
+      required: true
+
+  - tenant_id:
+      type: uuid
+      required: true
+
+  - product_id:
+      type: uuid
+      required: true
+
+  - product_name:
+      type: string
+      required: true
+
+  - current_margin:
+      type: numeric
+      required: true
+
+  - threshold:
+      type: numeric
+      required: true
+
+  - previous_margin:
+      type: numeric
+      nullable: true
+
+  - alert_level:
+      type: string
+      required: true
+      enum: ["warning", "critical"]
+
+  - alert_at:
+      type: datetime
+      required: true
+
+reactions:
+  - "Отправить уведомление менеджеру"
+  - "Создать задачу на анализ причин"
+  - "Запись в Audit Log"
+
+example:
+  event_id: "q11e8400-e29b-41d4-a716-446655440000"
+  enterprise_id: "aa0e8400-e29b-41d4-a716-446655440000"
+  tenant_id: "660e8400-e29b-41d4-a716-446655440000"
+  product_id: "dd0e8400-e29b-41d4-a716-446655440000"
+  product_name: "Ноутбук Lenovo"
+  current_margin: 12.5
+  threshold: 15.0
+  previous_margin: 18.2
+  alert_level: "critical"
+  alert_at: "2025-01-31T10:00:00Z"

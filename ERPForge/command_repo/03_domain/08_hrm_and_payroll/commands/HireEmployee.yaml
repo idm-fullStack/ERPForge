@@ -1,0 +1,137 @@
+# ============================================
+# Команда: Принять сотрудника (Hire Employee)
+# ============================================
+name: "HireEmployee"
+description: "Прием нового сотрудника на работу"
+version: "1.0.0"
+
+inputs:
+  - enterprise_id:
+      type: uuid
+      required: true
+
+  - tenant_id:
+      type: uuid
+      required: true
+
+  - department_id:
+      type: uuid
+      required: true
+
+  - position_id:
+      type: uuid
+      required: true
+
+  - last_name:
+      type: string
+      required: true
+      max_length: 100
+
+  - first_name:
+      type: string
+      required: true
+      max_length: 100
+
+  - middle_name:
+      type: string
+      nullable: true
+      max_length: 100
+
+  - birth_date:
+      type: date
+      required: true
+
+  - gender:
+      type: string
+      required: true
+      enum: ["male", "female"]
+
+  - inn:
+      type: string
+      required: true
+
+  - snils:
+      type: string
+      required: true
+
+  - phone:
+      type: string
+      required: true
+
+  - email:
+      type: string
+      nullable: true
+      format: email
+
+  - hire_date:
+      type: date
+      required: true
+
+  - employment_type:
+      type: string
+      required: true
+      enum: ["full_time", "part_time", "remote", "freelance", "intern"]
+
+  - salary_type:
+      type: string
+      required: true
+      enum: ["fixed", "hourly", "piecework", "commission"]
+
+  - salary_amount:
+      type: numeric
+      required: true
+      min: 0
+
+  - probation_period:
+      type: integer
+      default: 0
+
+pre_conditions:
+  - "У пользователя есть право 'employees.hire'"
+  - "Отдел и должность существуют"
+  - "ИНН и СНИЛС уникальны"
+
+post_conditions:
+  - "Сотрудник создан в статусе 'active'"
+  - "Создана запись в штатном расписании"
+  - "Запись в Audit Log"
+
+process:
+  steps:
+    - name: "ValidateInput"
+      check: "Все обязательные поля заполнены"
+
+    - name: "CheckUniqueInn"
+      check: "SELECT COUNT(*) FROM employees WHERE inn = '{inn}'"
+      on_fail: "Ошибка: ИНН уже существует"
+
+    - name: "CheckUniqueSnils"
+      check: "SELECT COUNT(*) FROM employees WHERE snils = '{snils}'"
+      on_fail: "Ошибка: СНИЛС уже существует"
+
+    - name: "CreateEmployee"
+      action: "INSERT INTO employees SET {...}"
+
+    - name: "UpdateStaffRegister"
+      action: "UPDATE staff_register SET units_filled = units_filled + 1 WHERE position_id = '{position_id}' AND department_id = '{department_id}'"
+
+    - name: "LogAudit"
+      action: "INSERT INTO audit_log"
+
+outputs:
+  - status:
+      type: string
+      enum: ["success", "failed"]
+
+  - employee_id:
+      type: uuid
+
+  - errors:
+      type: array
+      nullable: true
+
+events:
+  on_success:
+    - EmployeeHired.yaml
+  on_failure:
+    - EmployeeHireFailed.yaml

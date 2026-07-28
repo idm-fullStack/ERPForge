@@ -1,0 +1,87 @@
+# ============================================
+# Целевые показатели KPI
+# ============================================
+version: "1.0.0"
+type: kpi_targets
+name: "kpi_targets"
+description: "Целевые KPI для бизнеса"
+
+kpis:
+  - name: "margin_percent"
+    label: "Маржинальность"
+    type: "percent"
+    target: 20.0
+    minimum: 15.0
+    maximum: 30.0
+    unit: "%"
+    alert_threshold: 12.0
+
+  - name: "ltv_cac_ratio"
+    label: "Соотношение LTV/CAC"
+    type: "ratio"
+    target: 4.0
+    minimum: 3.0
+    maximum: 10.0
+    unit: "x"
+    alert_threshold: 2.5
+
+  - name: "cac"
+    label: "Стоимость привлечения клиента"
+    type: "monetary"
+    target: 10000.00
+    minimum: 5000.00
+    maximum: 20000.00
+    unit: "RUB"
+    alert_threshold: 25000.00
+
+  - name: "churn_rate"
+    label: "Отток клиентов"
+    type: "percent"
+    target: 3.0
+    minimum: 0.0
+    maximum: 5.0
+    unit: "%"
+    alert_threshold: 8.0
+
+  - name: "payback_months"
+    label: "Срок окупаемости CAC"
+    type: "integer"
+    target: 4
+    minimum: 1
+    maximum: 6
+    unit: "months"
+    alert_threshold: 8
+
+  - name: "customer_lifetime"
+    label: "Среднее время жизни клиента"
+    type: "integer"
+    target: 12
+    minimum: 6
+    maximum: 24
+    unit: "months"
+    alert_threshold: 4
+
+  - name: "ltv"
+    label: "Пожизненная ценность клиента"
+    type: "monetary"
+    target: 100000.00
+    minimum: 50000.00
+    maximum: 200000.00
+    unit: "RUB"
+    alert_threshold: 30000.00
+
+alerts:
+  - kpi: "margin_percent"
+    condition: "< 12.0"
+    severity: "critical"
+    action: "MarginDroppedAlert"
+
+  - kpi: "churn_rate"
+    condition: "> 8.0"
+    severity: "critical"
+    action: "Send notification to CEO"
+
+  - kpi: "ltv_cac_ratio"
+    condition: "< 2.5"
+    severity: "warning"
+    action: "Review marketing strategy"

@@ -1,0 +1,83 @@
+# ============================================
+# Проекция: LTV клиентов
+# ============================================
+version: "1.0.0"
+type: projection
+name: "customer_ltv_view"
+description: "Материализованное представление LTV клиентов"
+
+fields:
+  - customer_id:
+      type: uuid
+      indexed: true
+
+  - customer_name:
+      type: string
+
+  - inn:
+      type: string
+
+  - acquisition_date:
+      type: date
+      description: "Дата первого заказа"
+
+  - acquisition_channel:
+      type: string
+      description: "Канал привлечения"
+
+  - cohort:
+      type: string
+      indexed: true
+      description: "Когорта (YYYY-MM)"
+
+  - total_revenue:
+      type: numeric
+      description: "Общая выручка"
+
+  - total_orders:
+      type: integer
+      description: "Количество заказов"
+
+  - avg_order_value:
+      type: numeric
+      description: "Средний чек"
+
+  - avg_order_frequency:
+      type: numeric
+      description: "Частота заказов (в месяц)"
+
+  - customer_lifetime_months:
+      type: integer
+      description: "Время жизни клиента (мес)"
+
+  - ltv:
+      type: numeric
+      description: "Пожизненная ценность"
+
+  - cac:
+      type: numeric
+      description: "Стоимость привлечения"
+
+  - ltv_cac_ratio:
+      type: numeric
+      description: "Соотношение LTV/CAC"
+
+  - updated_at:
+      type: datetime
+
+example:
+  customer_id: "cc0e8400-e29b-41d4-a716-446655440000"
+  customer_name: "ООО Ромашка"
+  inn: "123456789012"
+  acquisition_date: "2025-01-15"
+  acquisition_channel: "referral"
+  cohort: "2025-01"
+  total_revenue: 159800.00
+  total_orders: 1
+  avg_order_value: 159800.00
+  avg_order_frequency: 1.0
+  customer_lifetime_months: 1
+  ltv: 159800.00
+  cac: 15000.00
+  ltv_cac_ratio: 10.7
+  updated_at: "2025-02-01T10:00:00Z"

@@ -1,0 +1,108 @@
+# ============================================
+# Справочник: Отделы (Departments)
+# ============================================
+version: "1.0.0"
+type: registry
+name: "departments"
+description: "Справочник отделов компании"
+
+fields:
+  - id:
+      type: uuid
+      primary: true
+
+  - enterprise_id:
+      type: uuid
+      required: true
+      indexed: true
+
+  - tenant_id:
+      type: uuid
+      required: true
+      indexed: true
+
+  - parent_id:
+      type: uuid
+      nullable: true
+      description: "ID головного отдела"
+
+  - code:
+      type: string
+      required: true
+      unique: true
+      indexed: true
+      description: "Код отдела"
+      example: "DIR"
+
+  - name:
+      type: string
+      required: true
+      max_length: 200
+      description: "Название отдела"
+      example: "Дирекция"
+
+  - description:
+      type: string
+      description: "Описание отдела"
+      example: "Руководство компанией"
+
+  - manager_position_id:
+      type: uuid
+      nullable: true
+      description: "Должность руководителя отдела"
+
+  - budget:
+      type: numeric
+      nullable: true
+      description: "Бюджет отдела"
+      example: 1000000.00
+
+  - location:
+      type: string
+      description: "Расположение"
+      example: "Москва, офис 10"
+
+  - phone:
+      type: string
+      description: "Телефон отдела"
+      example: "+74951234567"
+
+  - email:
+      type: string
+      format: email
+      description: "Email отдела"
+      example: "hr@company.ru"
+
+  - is_active:
+      type: boolean
+      default: true
+
+  - created_at:
+      type: datetime
+      default: "now()"
+
+  - updated_at:
+      type: datetime
+      default: "now()"
+
+examples:
+  - id: "j10e8400-e29b-41d4-a716-446655440000"
+    enterprise_id: "aa0e8400-e29b-41d4-a716-446655440000"
+    tenant_id: "660e8400-e29b-41d4-a716-446655440000"
+    code: "DIR"
+    name: "Дирекция"
+    description: "Руководство компанией"
+    location: "Москва, офис 10"
+    is_active: true
+
+  - id: "j10e8400-e29b-41d4-a716-446655440001"
+    enterprise_id: "aa0e8400-e29b-41d4-a716-446655440000"
+    tenant_id: "660e8400-e29b-41d4-a716-446655440000"
+    parent_id: "j10e8400-e29b-41d4-a716-446655440000"
+    code: "ACC"
+    name: "Бухгалтерия"
+    description: "Финансовый учет и отчетность"
+    location: "Москва, офис 15"
+    phone: "+74951234568"
+    email: "acc@company.ru"
+    is_active: true

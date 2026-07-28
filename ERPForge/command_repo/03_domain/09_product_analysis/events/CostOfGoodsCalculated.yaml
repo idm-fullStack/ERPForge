@@ -1,0 +1,64 @@
+# ============================================
+# Событие: COGS рассчитан
+# ============================================
+name: "CostOfGoodsCalculated"
+description: "Себестоимость проданных товаров успешно рассчитана"
+version: "1.0.0"
+
+fields:
+  - event_id:
+      type: uuid
+      required: true
+
+  - enterprise_id:
+      type: uuid
+      required: true
+
+  - tenant_id:
+      type: uuid
+      required: true
+
+  - period_start:
+      type: date
+      required: true
+
+  - period_end:
+      type: date
+      required: true
+
+  - method:
+      type: string
+      required: true
+      enum: ["fifo", "average", "lifo"]
+
+  - cogs_total:
+      type: numeric
+      required: true
+
+  - cogs_by_product:
+      type: array
+      required: true
+
+  - calculated_at:
+      type: datetime
+      required: true
+
+reactions:
+  - "Обновить product_margin_view"
+  - "Обновить юнит-экономику"
+  - "Запись в Audit Log"
+
+example:
+  event_id: "q10e8400-e29b-41d4-a716-446655440000"
+  enterprise_id: "aa0e8400-e29b-41d4-a716-446655440000"
+  tenant_id: "660e8400-e29b-41d4-a716-446655440000"
+  period_start: "2025-01-01"
+  period_end: "2025-01-31"
+  method: "fifo"
+  cogs_total: 134000.00
+  cogs_by_product:
+    - product_id: "dd0e8400-e29b-41d4-a716-446655440000"
+      product_name: "Ноутбук Lenovo"
+      quantity: 2
+      cogs: 134000.00
+  calculated_at: "2025-02-01T10:00:00Z"

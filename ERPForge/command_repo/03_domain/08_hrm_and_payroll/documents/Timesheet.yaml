@@ -1,0 +1,164 @@
+# ============================================
+# Документ: Табель учета рабочего времени (Timesheet)
+# ============================================
+version: "1.0.0"
+type: document
+name: "Timesheet"
+description: "Табель учета рабочего времени"
+
+fields:
+  - id:
+      type: uuid
+      primary: true
+
+  - enterprise_id:
+      type: uuid
+      required: true
+      indexed: true
+
+  - tenant_id:
+      type: uuid
+      required: true
+      indexed: true
+
+  - employee_id:
+      type: uuid
+      required: true
+      foreign_key: "employees.id"
+      description: "ID сотрудника"
+
+  - period_start:
+      type: date
+      required: true
+      description: "Начало периода"
+      example: "2025-01-01"
+
+  - period_end:
+      type: date
+      required: true
+      description: "Конец периода"
+      example: "2025-01-31"
+
+  - working_days:
+      type: integer
+      required: true
+      min: 0
+      description: "Рабочие дни по графику"
+      example: 22
+
+  - worked_days:
+      type: integer
+      required: true
+      min: 0
+      description: "Фактически отработанные дни"
+      example: 20
+
+  - worked_hours:
+      type: integer
+      required: true
+      min: 0
+      description: "Фактически отработанные часы"
+      example: 160
+
+  - overtime_hours:
+      type: integer
+      default: 0
+      description: "Переработка (часы)"
+      example: 4
+
+  - vacation_days:
+      type: integer
+      default: 0
+      description: "Дни отпуска"
+      example: 2
+
+  - sick_days:
+      type: integer
+      default: 0
+      description: "Дни больничного"
+      example: 0
+
+  - absence_days:
+      type: integer
+      default: 0
+      description: "Прогулы"
+      example: 0
+
+  - business_trip_days:
+      type: integer
+      default: 0
+      description: "Командировки"
+      example: 0
+
+  - work_from_home_days:
+      type: integer
+      default: 0
+      description: "Дни удаленной работы"
+      example: 5
+
+  - absences:
+      type: array
+      description: "Расшифровка отсутствий"
+      items:
+        type: object
+        properties:
+          date: { type: date }
+          type: { type: string, enum: ["vacation", "sick", "absence", "business_trip"] }
+          hours: { type: integer }
+
+  - daily_records:
+      type: array
+      description: "Помесячные записи по дням"
+      items:
+        type: object
+        properties:
+          date: { type: date }
+          hours: { type: integer }
+          status: { type: string, enum: ["work", "vacation", "sick", "absence", "holiday", "business_trip"] }
+
+  - status:
+      type: string
+      required: true
+      enum: ["draft", "submitted", "approved", "rejected"]
+      default: "draft"
+
+  - submitted_at:
+      type: datetime
+      nullable: true
+
+  - approved_at:
+      type: datetime
+      nullable: true
+
+  - approved_by:
+      type: uuid
+      nullable: true
+
+  - created_at:
+      type: datetime
+      default: "now()"
+
+  - updated_at:
+      type: datetime
+      default: "now()"
+
+examples:
+  - id: "k10e8400-e29b-41d4-a716-446655440000"
+    enterprise_id: "aa0e8400-e29b-41d4-a716-446655440000"
+    tenant_id: "660e8400-e29b-41d4-a716-446655440000"
+    employee_id: "h10e8400-e29b-41d4-a716-446655440000"
+    period_start: "2025-01-01"
+    period_end: "2025-01-31"
+    working_days: 22
+    worked_days: 20
+    worked_hours: 160
+    overtime_hours: 4
+    vacation_days: 2
+    sick_days: 0
+    absence_days: 0
+    business_trip_days: 0
+    work_from_home_days: 5
+    status: "approved"
+    submitted_at: "2025-02-01T09:00:00Z"
+    approved_at: "2025-02-02T10:00:00Z"
+    approved_by: "550e8400-e29b-41d4-a716-446655440002"

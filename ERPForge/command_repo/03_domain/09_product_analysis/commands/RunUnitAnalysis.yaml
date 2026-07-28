@@ -1,0 +1,91 @@
+# ============================================
+# Команда: Запуск юнит-экономики (Unit Analysis)
+# ============================================
+name: "RunUnitAnalysis"
+description: "Запуск расчета юнит-экономики по всем продуктам"
+version: "1.0.0"
+
+inputs:
+  - enterprise_id:
+      type: uuid
+      required: true
+
+  - tenant_id:
+      type: uuid
+      required: true
+
+  - period_start:
+      type: date
+      required: true
+
+  - period_end:
+      type: date
+      required: true
+
+  - recalculate_all:
+      type: boolean
+      default: false
+      description: "Пересчитать все, даже если уже есть"
+
+pre_conditions:
+  - "Должны быть данные по продажам и расходам"
+
+post_conditions:
+  - "Обновлены проекции юнит-экономики"
+  - "Запись в Audit Log"
+
+process:
+  steps:
+    - name: "GetSalesData"
+      action: "SELECT * FROM sales_invoice JOIN ledger_entries WHERE date BETWEEN..."
+
+    - name: "GetMarketingData"
+      action: "SELECT * FROM marketing_expenses WHERE date BETWEEN..."
+
+    - name: "GetCustomerData"
+      action: "SELECT * FROM customers WHERE created_at BETWEEN..."
+
+    - name: "CalculateCAC"
+      action: "cac = total_marketing_spend / new_customers_count"
+
+    - name: "CalculateLTV"
+      action: "ltv = avg_revenue_per_customer * avg_customer_lifetime"
+
+    - name: "CalculateMargin"
+      action: "margin = total_revenue - total_cogs"
+
+    - name: "CalculateChurn"
+      action: "churn_rate = churned_customers / total_customers"
+
+    - name: "CalculatePayback"
+      action: "payback_months = cac / (avg_monthly_revenue_per_customer - avg_monthly_cogs_per_customer)"
+
+    - name: "UpdateProjections"
+      action: "UPDATE product_margin_view, customer_ltv_view"
+
+    - name: "CheckAlerts"
+      action: "IF margin < threshold OR churn > threshold → MarginDroppedAlert"
+
+outputs:
+  - status:
+      type: string
+      enum: ["success", "failed"]
+
+  - metrics:
+      type: object
+      properties:
+        cac: { type: numeric }
+        ltv: { type: numeric }
+        margin: { type: numeric }
+        churn_rate: { type: numeric }
+        payback_months: { type: integer }
+
+  - errors:
+      type: array
+      nullable: true
+
+events:
+  on_success:
+    - UnitAnalysisCompleted.yaml
+  on_failure:
+    - UnitAnalysisFailed.yaml

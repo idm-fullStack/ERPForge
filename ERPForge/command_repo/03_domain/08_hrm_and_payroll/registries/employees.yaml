@@ -1,0 +1,317 @@
+# ============================================
+# Справочник: Сотрудники (Employees)
+# ============================================
+version: "1.0.0"
+type: registry
+name: "employees"
+description: "Справочник сотрудников компании"
+
+fields:
+  - id:
+      type: uuid
+      primary: true
+      description: "Уникальный идентификатор сотрудника"
+
+  - enterprise_id:
+      type: uuid
+      required: true
+      indexed: true
+      description: "ID юридического лица"
+
+  - tenant_id:
+      type: uuid
+      required: true
+      indexed: true
+      description: "ID клиента"
+
+  - department_id:
+      type: uuid
+      nullable: true
+      indexed: true
+      foreign_key: "departments.id"
+      description: "ID отдела"
+
+  - position_id:
+      type: uuid
+      nullable: true
+      indexed: true
+      foreign_key: "positions.id"
+      description: "ID должности"
+
+  - user_id:
+      type: uuid
+      nullable: true
+      description: "ID пользователя системы (если есть доступ)"
+
+  - employee_number:
+      type: string
+      required: true
+      unique: true
+      indexed: true
+      description: "Табельный номер"
+      example: "EMP-001"
+
+  - last_name:
+      type: string
+      required: true
+      max_length: 100
+      description: "Фамилия"
+      example: "Иванов"
+
+  - first_name:
+      type: string
+      required: true
+      max_length: 100
+      description: "Имя"
+      example: "Иван"
+
+  - middle_name:
+      type: string
+      max_length: 100
+      description: "Отчество"
+      example: "Сергеевич"
+
+  - birth_date:
+      type: date
+      required: true
+      description: "Дата рождения"
+      example: "1990-01-15"
+
+  - gender:
+      type: string
+      enum: ["male", "female"]
+      description: "Пол"
+      example: "male"
+
+  - inn:
+      type: string
+      indexed: true
+      description: "ИНН"
+      example: "123456789012"
+
+  - snils:
+      type: string
+      description: "СНИЛС"
+      example: "123-456-789 12"
+
+  - passport:
+      type: object
+      description: "Паспортные данные"
+      properties:
+        series: { type: string }
+        number: { type: string }
+        issued_by: { type: string }
+        issued_date: { type: date }
+        code: { type: string }
+
+  - phone:
+      type: string
+      description: "Телефон"
+      example: "+79001234567"
+
+  - email:
+      type: string
+      format: email
+      description: "Email"
+      example: "ivan@company.ru"
+
+  - address:
+      type: string
+      description: "Адрес регистрации"
+      example: "г. Москва, ул. Тверская, д. 1, кв. 10"
+
+  - hire_date:
+      type: date
+      required: true
+      description: "Дата приема на работу"
+      example: "2020-01-15"
+
+  - probation_period:
+      type: integer
+      default: 0
+      description: "Испытательный срок в месяцах"
+      example: 3
+
+  - employment_type:
+      type: string
+      required: true
+      enum: ["full_time", "part_time", "remote", "freelance", "intern"]
+      default: "full_time"
+      description: "Тип занятости"
+      example: "full_time"
+
+  - employment_basis:
+      type: string
+      required: true
+      enum: ["labor_contract", "civil_contract", "individual_entrepreneur"]
+      default: "labor_contract"
+      description: "Основание для работы"
+      example: "labor_contract"
+
+  - contract_number:
+      type: string
+      description: "Номер трудового договора"
+      example: "ТД-2020-001"
+
+  - contract_date:
+      type: date
+      description: "Дата трудового договора"
+      example: "2020-01-15"
+
+  - salary_type:
+      type: string
+      required: true
+      enum: ["fixed", "hourly", "piecework", "commission"]
+      default: "fixed"
+      description: "Тип оплаты"
+      example: "fixed"
+
+  - salary_amount:
+      type: numeric
+      required: true
+      min: 0
+      description: "Оклад (руб/мес)"
+      example: 50000.00
+
+  - hourly_rate:
+      type: numeric
+      nullable: true
+      description: "Почасовая ставка (для hourly)"
+      example: 500.00
+
+  - bonus_percent:
+      type: numeric
+      nullable: true
+      description: "Процент премии"
+      example: 10.0
+
+  - tax_deduction:
+      type: integer
+      default: 0
+      description: "Налоговый вычет (руб)"
+      example: 1400
+
+  - bank_account:
+      type: object
+      description: "Банковские реквизиты"
+      properties:
+        account_number: { type: string }
+        bank_name: { type: string }
+        bik: { type: string }
+
+  - medical_insurance:
+      type: string
+      description: "Полис медицинского страхования"
+      example: "1234567890123456"
+
+  - education:
+      type: array
+      description: "Образование"
+      items:
+        type: object
+        properties:
+          institution: { type: string }
+          specialty: { type: string }
+          year: { type: integer }
+          degree: { type: string }
+
+  - work_experience:
+      type: array
+      description: "Опыт работы"
+      items:
+        type: object
+        properties:
+          company: { type: string }
+          position: { type: string }
+          start_date: { type: date }
+          end_date: { type: date }
+          reason: { type: string }
+
+  - skills:
+      type: array
+      items: { type: string }
+      description: "Навыки и компетенции"
+      example: ["1С", "Excel", "SQL"]
+
+  - certificates:
+      type: array
+      items:
+        type: object
+        properties:
+          name: { type: string }
+          issued_by: { type: string }
+          issued_date: { type: date }
+          expiry_date: { type: date }
+
+  - emergency_contact:
+      type: object
+      description: "Контакт в экстренных случаях"
+      properties:
+        name: { type: string }
+        relationship: { type: string }
+        phone: { type: string }
+
+  - status:
+      type: string
+      required: true
+      indexed: true
+      enum: ["active", "probation", "vacation", "sick_leave", "maternity", "inactive", "fired"]
+      default: "active"
+      description: "Статус сотрудника"
+      example: "active"
+
+  - fired_date:
+      type: date
+      nullable: true
+      description: "Дата увольнения"
+
+  - fired_reason:
+      type: string
+      nullable: true
+      description: "Причина увольнения"
+
+  - notes:
+      type: string
+      description: "Заметки"
+
+  - created_at:
+      type: datetime
+      default: "now()"
+
+  - updated_at:
+      type: datetime
+      default: "now()"
+
+examples:
+  - id: "h10e8400-e29b-41d4-a716-446655440000"
+    enterprise_id: "aa0e8400-e29b-41d4-a716-446655440000"
+    tenant_id: "660e8400-e29b-41d4-a716-446655440000"
+    department_id: "j10e8400-e29b-41d4-a716-446655440000"
+    position_id: "i10e8400-e29b-41d4-a716-446655440000"
+    user_id: "550e8400-e29b-41d4-a716-446655440001"
+    employee_number: "EMP-001"
+    last_name: "Иванов"
+    first_name: "Иван"
+    middle_name: "Сергеевич"
+    birth_date: "1990-01-15"
+    gender: "male"
+    inn: "123456789012"
+    snils: "123-456-789 12"
+    phone: "+79001234567"
+    email: "ivan@company.ru"
+    hire_date: "2020-01-15"
+    probation_period: 3
+    employment_type: "full_time"
+    employment_basis: "labor_contract"
+    contract_number: "ТД-2020-001"
+    contract_date: "2020-01-15"
+    salary_type: "fixed"
+    salary_amount: 50000.00
+    tax_deduction: 1400
+    bank_account:
+      account_number: "40802810100000000001"
+      bank_name: "Сбербанк"
+      bik: "044525225"
+    status: "active"
+    skills: ["1С", "Excel", "SQL"]
+    created_at: "2020-01-15T10:00:00Z"

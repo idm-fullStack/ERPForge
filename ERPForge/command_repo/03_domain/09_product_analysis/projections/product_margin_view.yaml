@@ -1,0 +1,87 @@
+# ============================================
+# Проекция: Маржинальность по товарам
+# ============================================
+version: "1.0.0"
+type: projection
+name: "product_margin_view"
+description: "Материализованное представление маржинальности товаров"
+
+fields:
+  - product_id:
+      type: uuid
+      indexed: true
+      description: "ID товара"
+
+  - product_name:
+      type: string
+      description: "Название товара"
+
+  - sku:
+      type: string
+      description: "Артикул"
+
+  - category:
+      type: string
+      indexed: true
+      description: "Категория"
+
+  - current_cost:
+      type: numeric
+      description: "Текущая себестоимость"
+
+  - current_price:
+      type: numeric
+      description: "Текущая цена продажи"
+
+  - current_margin_percent:
+      type: numeric
+      description: "Текущая маржинальность %"
+
+  - period:
+      type: string
+      description: "Период (YYYY-MM)"
+
+  - total_sales_quantity:
+      type: integer
+      description: "Количество продаж"
+
+  - total_revenue:
+      type: numeric
+      description: "Выручка"
+
+  - total_cogs:
+      type: numeric
+      description: "Себестоимость"
+
+  - gross_margin:
+      type: numeric
+      description: "Маржинальный доход"
+
+  - margin_percent:
+      type: numeric
+      description: "Маржинальность %"
+
+  - trend_3m:
+      type: numeric
+      description: "Тренд за 3 месяца"
+
+  - updated_at:
+      type: datetime
+      description: "Дата обновления"
+
+example:
+  product_id: "dd0e8400-e29b-41d4-a716-446655440000"
+  product_name: "Ноутбук Lenovo"
+  sku: "PR-001"
+  category: "Электроника"
+  current_cost: 67000.00
+  current_price: 79900.00
+  current_margin_percent: 16.1
+  period: "2025-01"
+  total_sales_quantity: 2
+  total_revenue: 159800.00
+  total_cogs: 134000.00
+  gross_margin: 25800.00
+  margin_percent: 16.1
+  trend_3m: 2.5
+  updated_at: "2025-02-01T10:00:00Z"

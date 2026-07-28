@@ -1,0 +1,74 @@
+# ============================================
+# Событие: Зарплата рассчитана
+# ============================================
+name: "SalaryCalculated"
+description: "Заработная плата успешно рассчитана"
+version: "1.0.0"
+
+fields:
+  - event_id:
+      type: uuid
+      required: true
+
+  - enterprise_id:
+      type: uuid
+      required: true
+
+  - tenant_id:
+      type: uuid
+      required: true
+
+  - period_start:
+      type: date
+      required: true
+
+  - period_end:
+      type: date
+      required: true
+
+  - payroll_ids:
+      type: array
+      required: true
+
+  - total_accrued:
+      type: numeric
+      required: true
+
+  - total_ndfl:
+      type: numeric
+      required: true
+
+  - total_to_pay:
+      type: numeric
+      required: true
+
+  - employee_count:
+      type: integer
+      required: true
+
+  - calculated_by:
+      type: uuid
+      required: true
+
+  - calculated_at:
+      type: datetime
+      required: true
+
+reactions:
+  - "Сформировать сводный документ для бухгалтерии"
+  - "Отправить уведомление руководителю"
+  - "Запись в Audit Log"
+
+example:
+  event_id: "p12e8400-e29b-41d4-a716-446655440000"
+  enterprise_id: "aa0e8400-e29b-41d4-a716-446655440000"
+  tenant_id: "660e8400-e29b-41d4-a716-446655440000"
+  period_start: "2025-01-01"
+  period_end: "2025-01-31"
+  payroll_ids: ["l10e8400-e29b-41d4-a716-446655440000"]
+  total_accrued: 51454.55
+  total_ndfl: 6689.09
+  total_to_pay: 44765.46
+  employee_count: 1
+  calculated_by: "550e8400-e29b-41d4-a716-446655440001"
+  calculated_at: "2025-02-01T10:00:00Z"

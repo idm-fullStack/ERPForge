@@ -1,0 +1,61 @@
+# ============================================
+# Калькулятор: LTV (Customer Lifetime Value)
+# ============================================
+name: "LTCCalculator"
+description: "Калькулятор пожизненной ценности клиента"
+version: "1.0.0"
+
+inputs:
+  - avg_order_value:
+      type: numeric
+      required: true
+      description: "Средний чек"
+
+  - avg_order_frequency:
+      type: numeric
+      required: true
+      description: "Частота заказов в месяц"
+
+  - avg_customer_lifetime:
+      type: numeric
+      required: true
+      description: "Среднее время жизни клиента (мес)"
+
+  - gross_margin_percent:
+      type: numeric
+      required: true
+      description: "Маржинальность %"
+
+formulas:
+  - name: "ltv_gtv"
+    formula: "avg_order_value * avg_order_frequency * avg_customer_lifetime"
+
+  - name: "ltv_gmv"
+    formula: "ltv_gtv * (gross_margin_percent / 100)"
+
+  - name: "ltv_payback"
+    formula: "ltv_gmv / avg_order_value"
+
+outputs:
+  - ltv_gtv:
+      type: numeric
+      description: "LTV (Gross Total Value)"
+
+  - ltv_gmv:
+      type: numeric
+      description: "LTV (Gross Margin Value)"
+
+  - ltv_payback:
+      type: numeric
+      description: "LTV в средних чеках"
+
+example:
+  inputs:
+    avg_order_value: 79900.00
+    avg_order_frequency: 1.0
+    avg_customer_lifetime: 12
+    gross_margin_percent: 16.1
+  outputs:
+    ltv_gtv: 958800.00
+    ltv_gmv: 154366.80
+    ltv_payback: 1.93

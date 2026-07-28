@@ -1,0 +1,75 @@
+# ============================================
+# Запрос: LTV клиента (Customer Lifetime Value)
+# ============================================
+name: "GetCustomerLTV"
+description: "Получение LTV по клиентам"
+version: "1.0.0"
+
+inputs:
+  - enterprise_id:
+      type: uuid
+      required: true
+
+  - customer_id:
+      type: uuid
+      nullable: true
+
+  - cohort_month:
+      type: string
+      nullable: true
+      description: "Когорта (YYYY-MM)"
+
+outputs:
+  - customer_ltv:
+      type: array
+      items:
+        type: object
+        properties:
+          customer_id: { type: uuid }
+          customer_name: { type: string }
+          acquisition_date: { type: date }
+          acquisition_channel: { type: string }
+          total_revenue: { type: numeric }
+          total_orders: { type: integer }
+          avg_order_value: { type: numeric }
+          customer_lifetime_months: { type: integer }
+          ltv: { type: numeric }
+          cac: { type: numeric }
+          ltv_cac_ratio: { type: numeric }
+          cohort: { type: string }
+
+  - cohort_analysis:
+      type: array
+      items:
+        type: object
+        properties:
+          cohort: { type: string }
+          customers: { type: integer }
+          total_revenue: { type: numeric }
+          avg_ltv: { type: numeric }
+          retention_rate_1m: { type: numeric }
+          retention_rate_3m: { type: numeric }
+          retention_rate_6m: { type: numeric }
+
+example_response:
+  customer_ltv:
+    - customer_id: "cc0e8400-e29b-41d4-a716-446655440000"
+      customer_name: "ООО Ромашка"
+      acquisition_date: "2025-01-15"
+      acquisition_channel: "referral"
+      total_revenue: 159800.00
+      total_orders: 1
+      avg_order_value: 159800.00
+      customer_lifetime_months: 1
+      ltv: 159800.00
+      cac: 15000.00
+      ltv_cac_ratio: 10.7
+      cohort: "2025-01"
+  cohort_analysis:
+    - cohort: "2025-01"
+      customers: 5
+      total_revenue: 500000.00
+      avg_ltv: 100000.00
+      retention_rate_1m: 80.0
+      retention_rate_3m: 60.0
+      retention_rate_6m: 40.0

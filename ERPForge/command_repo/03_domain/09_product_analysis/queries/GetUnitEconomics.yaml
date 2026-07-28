@@ -1,0 +1,88 @@
+# ============================================
+# Запрос: Полная юнит-экономика
+# ============================================
+name: "GetUnitEconomics"
+description: "Получение полной картины юнит-экономики"
+version: "1.0.0"
+
+inputs:
+  - enterprise_id:
+      type: uuid
+      required: true
+
+  - period_start:
+      type: date
+      required: true
+
+  - period_end:
+      type: date
+      required: true
+
+  - segment:
+      type: string
+      nullable: true
+      enum: ["all", "product", "customer", "channel"]
+
+outputs:
+  - summary:
+      type: object
+      properties:
+        total_revenue: { type: numeric }
+        total_cogs: { type: numeric }
+        gross_margin: { type: numeric }
+        gross_margin_percent: { type: numeric }
+        cac: { type: numeric }
+        ltv: { type: numeric }
+        ltv_cac_ratio: { type: numeric }
+        payback_months: { type: integer }
+        churn_rate: { type: numeric }
+
+  - breakdown:
+      type: object
+      properties:
+        by_product:
+          type: array
+          items:
+            type: object
+            properties:
+              product_id: { type: uuid }
+              product_name: { type: string }
+              revenue: { type: numeric }
+              cogs: { type: numeric }
+              margin_percent: { type: numeric }
+        by_customer:
+          type: array
+          items:
+            type: object
+            properties:
+              customer_id: { type: uuid }
+              customer_name: { type: string }
+              revenue: { type: numeric }
+              ltv: { type: numeric }
+        by_channel:
+          type: array
+          items:
+            type: object
+            properties:
+              channel: { type: string }
+              revenue: { type: numeric }
+              cac: { type: numeric }
+
+example_response:
+  summary:
+    total_revenue: 159800.00
+    total_cogs: 134000.00
+    gross_margin: 25800.00
+    gross_margin_percent: 16.1
+    cac: 15000.00
+    ltv: 45000.00
+    ltv_cac_ratio: 3.0
+    payback_months: 4
+    churn_rate: 5.2
+  breakdown:
+    by_product:
+      - product_id: "dd0e8400-e29b-41d4-a716-446655440000"
+        product_name: "Ноутбук Lenovo"
+        revenue: 159800.00
+        cogs: 134000.00
+        margin_percent: 16.1

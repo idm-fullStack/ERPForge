@@ -1,0 +1,212 @@
+# ============================================
+# Документ: Расчет заработной платы (Payroll)
+# ============================================
+version: "1.0.0"
+type: document
+name: "Payroll"
+description: "Расчет заработной платы сотрудника"
+
+fields:
+  - id:
+      type: uuid
+      primary: true
+
+  - enterprise_id:
+      type: uuid
+      required: true
+      indexed: true
+
+  - tenant_id:
+      type: uuid
+      required: true
+      indexed: true
+
+  - employee_id:
+      type: uuid
+      required: true
+      foreign_key: "employees.id"
+
+  - period_start:
+      type: date
+      required: true
+
+  - period_end:
+      type: date
+      required: true
+
+  - salary_basis:
+      type: numeric
+      required: true
+      description: "Базовый оклад"
+      example: 50000.00
+
+  - worked_days:
+      type: integer
+      required: true
+      description: "Отработанные дни"
+      example: 20
+
+  - working_days:
+      type: integer
+      required: true
+      description: "Рабочие дни в периоде"
+      example: 22
+
+  - salary_calculated:
+      type: numeric
+      required: true
+      description: "Зарплата за отработанное время"
+      example: 45454.55
+
+  - bonuses:
+      type: array
+      description: "Премии и надбавки"
+      items:
+        type: object
+        properties:
+          name: { type: string }
+          amount: { type: numeric }
+          type: { type: string, enum: ["regular", "performance", "bonus", "compensation"] }
+
+  - bonus_total:
+      type: numeric
+      default: 0
+      description: "Итого премий"
+      example: 5000.00
+
+  - overtime_pay:
+      type: numeric
+      default: 0
+      description: "Оплата сверхурочных"
+      example: 1000.00
+
+  - vacation_pay:
+      type: numeric
+      default: 0
+      description: "Оплата отпуска"
+      example: 0.00
+
+  - sick_pay:
+      type: numeric
+      default: 0
+      description: "Оплата больничного"
+      example: 0.00
+
+  - business_trip_pay:
+      type: numeric
+      default: 0
+      description: "Командировочные"
+      example: 0.00
+
+  - total_accrued:
+      type: numeric
+      required: true
+      description: "Всего начислено"
+      example: 51454.55
+
+  - ndfl:
+      type: numeric
+      required: true
+      description: "НДФЛ (13%)"
+      example: 6689.09
+
+  - tax_deduction:
+      type: numeric
+      default: 0
+      description: "Налоговый вычет"
+      example: 1400.00
+
+  - ndfl_taxable:
+      type: numeric
+      description: "Налогооблагаемая база"
+      example: 50054.55
+
+  - total_deductions:
+      type: numeric
+      default: 0
+      description: "Прочие удержания"
+      example: 0.00
+
+  - amount_to_pay:
+      type: numeric
+      required: true
+      description: "К выплате"
+      example: 44765.46
+
+  - insurance_contributions:
+      type: object
+      description: "Страховые взносы"
+      properties:
+        pension: { type: numeric }
+        medical: { type: numeric }
+        social: { type: numeric }
+
+  - payment_date:
+      type: date
+      nullable: true
+      description: "Дата выплаты"
+
+  - payment_document:
+      type: string
+      nullable: true
+      description: "Номер платежного документа"
+
+  - status:
+      type: string
+      required: true
+      indexed: true
+      enum: ["calculated", "approved", "paid", "rejected"]
+      default: "calculated"
+
+  - approved_at:
+      type: datetime
+      nullable: true
+
+  - paid_at:
+      type: datetime
+      nullable: true
+
+  - created_at:
+      type: datetime
+      default: "now()"
+
+  - created_by:
+      type: uuid
+
+  - updated_at:
+      type: datetime
+      default: "now()"
+
+examples:
+  - id: "l10e8400-e29b-41d4-a716-446655440000"
+    enterprise_id: "aa0e8400-e29b-41d4-a716-446655440000"
+    tenant_id: "660e8400-e29b-41d4-a716-446655440000"
+    employee_id: "h10e8400-e29b-41d4-a716-446655440000"
+    period_start: "2025-01-01"
+    period_end: "2025-01-31"
+    salary_basis: 50000.00
+    worked_days: 20
+    working_days: 22
+    salary_calculated: 45454.55
+    bonuses:
+      - name: "Премия за выполнение плана"
+        amount: 5000.00
+        type: "performance"
+    bonus_total: 5000.00
+    overtime_pay: 1000.00
+    vacation_pay: 0.00
+    sick_pay: 0.00
+    business_trip_pay: 0.00
+    total_accrued: 51454.55
+    ndfl: 6689.09
+    tax_deduction: 1400.00
+    ndfl_taxable: 50054.55
+    total_deductions: 0.00
+    amount_to_pay: 44765.46
+    insurance_contributions:
+      pension: 11320.00
+      medical: 2624.18
+      social: 1492.18
+    status: "paid"
+    paid_at: "2025-02-05T14:00:00Z"
+    payment_document: "ПП-2025-015"

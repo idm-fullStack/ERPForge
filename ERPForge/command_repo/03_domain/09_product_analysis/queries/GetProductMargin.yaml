@@ -1,0 +1,79 @@
+# ============================================
+# Запрос: Маржинальность по продукту
+# ============================================
+name: "GetProductMargin"
+description: "Получение маржинальности по продукту"
+version: "1.0.0"
+
+inputs:
+  - product_id:
+      type: uuid
+      required: true
+
+  - period_start:
+      type: date
+      required: true
+
+  - period_end:
+      type: date
+      required: true
+
+outputs:
+  - product:
+      type: object
+      properties:
+        id: { type: uuid }
+        name: { type: string }
+        sku: { type: string }
+        category: { type: string }
+
+  - revenue:
+      type: object
+      properties:
+        total: { type: numeric }
+        quantity: { type: integer }
+        avg_price: { type: numeric }
+
+  - cogs:
+      type: object
+      properties:
+        total: { type: numeric }
+        avg_cost: { type: numeric }
+
+  - margin:
+      type: object
+      properties:
+        absolute: { type: numeric }
+        percent: { type: numeric }
+
+  - trends:
+      type: array
+      items:
+        type: object
+        properties:
+          month: { type: string }
+          revenue: { type: numeric }
+          cogs: { type: numeric }
+          margin_percent: { type: numeric }
+
+example_response:
+  product:
+    id: "dd0e8400-e29b-41d4-a716-446655440000"
+    name: "Ноутбук Lenovo"
+    sku: "PR-001"
+    category: "Электроника"
+  revenue:
+    total: 159800.00
+    quantity: 2
+    avg_price: 79900.00
+  cogs:
+    total: 134000.00
+    avg_cost: 67000.00
+  margin:
+    absolute: 25800.00
+    percent: 16.1
+  trends:
+    - month: "2025-01"
+      revenue: 159800.00
+      cogs: 134000.00
+      margin_percent: 16.1
