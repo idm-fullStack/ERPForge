@@ -1,0 +1,79 @@
+# ============================================
+# Коннектор: МойСклад (Moysklad)
+# ============================================
+name: "moysklad"
+type: connector
+version: "1.0.0"
+description: "Коннектор для интеграции с МойСклад"
+
+# Настройки подключения
+connection:
+  base_url: "https://api.moysklad.ru"
+  api_version: "1.2"
+  timeout: 30
+  retry: 3
+
+# Авторизация
+auth:
+  type: "basic_auth"
+  credentials:
+    username: "{MOYSKLAD_LOGIN}"
+    password: "{MOYSKLAD_PASSWORD}"
+
+# Операции
+operations:
+  # Синхронизация товаров
+  sync_products:
+    method: "GET"
+    path: "/api/remap/1.2/entity/product"
+    params:
+      limit: 100
+      offset: "{offset}"
+
+  # Синхронизация контрагентов
+  sync_counterparties:
+    method: "GET"
+    path: "/api/remap/1.2/entity/counterparty"
+    params:
+      limit: 100
+
+  # Синхронизация документов
+  sync_documents:
+    method: "GET"
+    path: "/api/remap/1.2/entity/demand"
+    params:
+      filter: "moment>{date_from}"
+
+  # Создание документа
+  create_document:
+    method: "POST"
+    path: "/api/remap/1.2/entity/demand"
+    payload:
+      name: "{number}"
+      moment: "{date}"
+      counterparty: "{counterparty_id}"
+      positions: "{items}"
+
+# Синхронизация
+sync:
+  schedule: "daily"
+  batch_size: 100
+  full_sync: false
+
+# Маппинг
+mapping:
+  products:
+    source: "nomenclature"
+    target: "product"
+    fields:
+      name: "name"
+      sku: "code"
+      price: "salePrices.0.value"
+
+  counterparties:
+    source: "counterparty"
+    target: "counterparty"
+    fields:
+      name: "name"
+      inn: "inn"
+      phone: "phone"

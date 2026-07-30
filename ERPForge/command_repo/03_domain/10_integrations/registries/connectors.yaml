@@ -1,0 +1,216 @@
+# ============================================
+# Справочник: Коннекторы интеграций
+# ============================================
+version: "1.0.0"
+type: registry
+name: "connectors"
+description: "Справочник доступных коннекторов для интеграций"
+
+fields:
+  - id:
+      type: uuid
+      primary: true
+      description: "Уникальный идентификатор коннектора"
+
+  - code:
+      type: string
+      required: true
+      unique: true
+      indexed: true
+      max_length: 50
+      description: "Кодовое имя коннектора"
+      example: "BANK_SBER"
+
+  - name:
+      type: string
+      required: true
+      max_length: 200
+      description: "Название коннектора"
+      example: "СберБанк (API)"
+
+  - description:
+      type: string
+      max_length: 500
+      description: "Описание коннектора"
+      example: "Интеграция с банковскими выписками СберБанка"
+
+  - type:
+      type: string
+      required: true
+      indexed: true
+      enum: ["bank", "marketplace", "accounting", "payment", "crm", "custom"]
+      description: "Тип коннектора"
+      example: "bank"
+
+  - category:
+      type: string
+      required: true
+      indexed: true
+      enum: ["financial", "sales", "inventory", "tax", "all"]
+      description: "Категория интеграции"
+      example: "financial"
+
+  - provider:
+      type: string
+      required: true
+      description: "Провайдер интеграции"
+      example: "SberBank"
+
+  - version:
+      type: string
+      default: "1.0.0"
+      description: "Версия коннектора"
+
+  - api_version:
+      type: string
+      description: "Версия API провайдера"
+      example: "v2"
+
+  - auth_type:
+      type: string
+      required: true
+      enum: ["api_key", "oauth2", "basic_auth", "certificate", "none"]
+      default: "oauth2"
+      description: "Тип авторизации"
+      example: "oauth2"
+
+  - auth_config:
+      type: object
+      description: "Конфигурация авторизации"
+      properties:
+        client_id: { type: string }
+        client_secret: { type: string }
+        token_url: { type: string }
+        auth_url: { type: string }
+        scope: { type: string }
+        grant_type: { type: string }
+
+  - endpoints:
+      type: object
+      description: "API endpoints"
+      properties:
+        base_url: { type: string }
+        sync_url: { type: string }
+        webhook_url: { type: string }
+        health_check_url: { type: string }
+
+  - supported_operations:
+      type: array
+      description: "Поддерживаемые операции"
+      items:
+        type: string
+        enum: ["sync", "export", "import", "webhook", "realtime"]
+      example: ["sync", "export"]
+
+  - rate_limit:
+      type: object
+      description: "Лимиты API"
+      properties:
+        requests_per_second: { type: integer, default: 10 }
+        requests_per_minute: { type: integer, default: 100 }
+        requests_per_day: { type: integer, default: 10000 }
+
+  - credentials_required:
+      type: array
+      description: "Обязательные учетные данные"
+      items:
+        type: object
+        properties:
+          name: { type: string }
+          label: { type: string }
+          type: { type: string, enum: ["text", "password", "file", "textarea"] }
+          required: { type: boolean, default: true }
+
+  - mapping_rules:
+      type: object
+      description: "Правила маппинга данных"
+      properties:
+        entity_mappings: { type: object }
+        field_mappings: { type: object }
+        transform_rules: { type: array }
+
+  - status:
+      type: string
+      indexed: true
+      enum: ["active", "inactive", "deprecated", "beta"]
+      default: "active"
+
+  - created_at:
+      type: datetime
+      default: "now()"
+
+  - updated_at:
+      type: datetime
+      default: "now()"
+
+examples:
+  - id: "r10e8400-e29b-41d4-a716-446655440000"
+    code: "BANK_SBER"
+    name: "СберБанк API"
+    description: "Интеграция с выписками и платежами СберБанка"
+    type: "bank"
+    category: "financial"
+    provider: "SberBank"
+    version: "1.0.0"
+    api_version: "v2"
+    auth_type: "oauth2"
+    endpoints:
+      base_url: "https://api.sberbank.ru"
+      sync_url: "/rest/v2/statements"
+      health_check_url: "/rest/v2/health"
+    supported_operations: ["sync", "export"]
+    credentials_required:
+      - name: "client_id"
+        label: "Client ID"
+        type: "text"
+        required: true
+      - name: "client_secret"
+        label: "Client Secret"
+        type: "password"
+        required: true
+      - name: "account_number"
+        label: "Номер счета"
+        type: "text"
+        required: true
+    status: "active"
+
+  - id: "r10e8400-e29b-41d4-a716-446655440001"
+    code: "1C_ACCOUNTING"
+    name: "1С:Бухгалтерия"
+    description: "Интеграция с 1С:Бухгалтерия (выгрузка/загрузка)"
+    type: "accounting"
+    category: "financial"
+    provider: "1C"
+    version: "1.0.0"
+    api_version: "v1"
+    auth_type: "basic_auth"
+    endpoints:
+      base_url: "https://1c.company.ru"
+      sync_url: "/exchange/erpforge"
+    supported_operations: ["export", "import"]
+    status: "active"
+
+  - id: "r10e8400-e29b-41d4-a716-446655440002"
+    code: "OZON_MARKETPLACE"
+    name: "Ozon Маркетплейс"
+    description: "Интеграция с маркетплейсом Ozon"
+    type: "marketplace"
+    category: "sales"
+    provider: "Ozon"
+    version: "1.0.0"
+    api_version: "v3"
+    auth_type: "api_key"
+    endpoints:
+      base_url: "https://api.ozon.ru"
+      sync_url: "/v3/product/import"
+    supported_operations: ["sync", "import"]
+    credentials_required:
+      - name: "client_id"
+        label: "Client ID"
+        type: "text"
+        required: true
+      - name: "api_key"
+        label: "API Key"
+        type: "password"
+        required: true
+    status: "active"

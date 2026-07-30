@@ -1,0 +1,70 @@
+# ============================================
+# Коннектор: Wildberries Маркетплейс
+# ============================================
+name: "wildberries"
+type: connector
+version: "1.0.0"
+description: "Коннектор для интеграции с маркетплейсом Wildberries"
+
+# Настройки подключения
+connection:
+  base_url: "https://api.wildberries.ru"
+  timeout: 30
+  retry: 3
+
+# Авторизация
+auth:
+  type: "api_key"
+  header: "Authorization"
+  credentials:
+    api_key: "{WB_API_KEY}"
+  token_prefix: "Bearer"
+
+# Операции
+operations:
+  # Получение списка товаров
+  get_products:
+    method: "GET"
+    path: "/api/v3/products"
+    params:
+      limit: 100
+      offset: "{offset}"
+
+  # Экспорт остатков
+  export_stock:
+    method: "PUT"
+    path: "/api/v3/stocks"
+    payload:
+      stocks:
+        - sku: "{sku}"
+          amount: "{quantity}"
+
+  # Получение заказов
+  get_orders:
+    method: "GET"
+    path: "/api/v3/orders"
+    params:
+      date_from: "{date_from}"
+      status: "processing"
+
+  # Получение отчетов
+  get_reports:
+    method: "GET"
+    path: "/api/v3/reports"
+    params:
+      date_from: "{date_from}"
+      date_to: "{date_to}"
+      type: "sales"
+
+# Синхронизация
+sync:
+  schedule: "every_4_hours"
+  batch_size: 200
+
+# Обработка ошибок
+error_handling:
+  retry_on:
+    - "timeout"
+    - "rate_limit"
+  max_retries: 3
+  retry_delay: 120

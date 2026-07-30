@@ -1,0 +1,78 @@
+# ============================================
+# Событие: Ошибка интеграции
+# ============================================
+name: "IntegrationFailed"
+description: "Произошла ошибка при интеграции с внешней системой"
+version: "1.0.0"
+
+fields:
+  - event_id:
+      type: uuid
+      required: true
+
+  - enterprise_id:
+      type: uuid
+      required: true
+
+  - tenant_id:
+      type: uuid
+      required: true
+
+  - connector:
+      type: string
+      required: true
+
+  - operation:
+      type: string
+      required: true
+      enum: ["sync", "export", "import", "webhook"]
+
+  - error_code:
+      type: string
+      required: true
+
+  - error_message:
+      type: string
+      required: true
+
+  - request_url:
+      type: string
+      nullable: true
+
+  - request_payload:
+      type: object
+      nullable: true
+
+  - response_code:
+      type: integer
+      nullable: true
+
+  - response_body:
+      type: string
+      nullable: true
+
+  - retry_count:
+      type: integer
+      default: 0
+
+  - failed_at:
+      type: datetime
+      required: true
+
+reactions:
+  - "Отправить уведомление администратору"
+  - "Добавить задачу в очередь на повтор"
+  - "Запись в Audit Log"
+
+example:
+  event_id: "s11e8400-e29b-41d4-a716-446655440000"
+  enterprise_id: "aa0e8400-e29b-41d4-a716-446655440000"
+  tenant_id: "660e8400-e29b-41d4-a716-446655440000"
+  connector: "bank_sber"
+  operation: "sync"
+  error_code: "AUTH_FAILED"
+  error_message: "Истек срок действия токена OAuth2"
+  request_url: "https://api.sberbank.ru/rest/v2/statements"
+  response_code: 401
+  retry_count: 1
+  failed_at: "2025-02-01T10:00:00Z"

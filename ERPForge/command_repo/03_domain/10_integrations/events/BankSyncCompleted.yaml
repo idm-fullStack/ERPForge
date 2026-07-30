@@ -1,0 +1,64 @@
+# ============================================
+# Событие: Синхронизация с банком завершена
+# ============================================
+name: "BankSyncCompleted"
+description: "Синхронизация банковских операций успешно завершена"
+version: "1.0.0"
+
+fields:
+  - event_id:
+      type: uuid
+      required: true
+
+  - enterprise_id:
+      type: uuid
+      required: true
+
+  - tenant_id:
+      type: uuid
+      required: true
+
+  - connector:
+      type: string
+      required: true
+
+  - account_number:
+      type: string
+      required: true
+
+  - period_start:
+      type: date
+      required: true
+
+  - period_end:
+      type: date
+      required: true
+
+  - transactions_processed:
+      type: integer
+      required: true
+
+  - documents_created:
+      type: integer
+      required: true
+
+  - synced_at:
+      type: datetime
+      required: true
+
+reactions:
+  - "Обновить баланс счетов"
+  - "Уведомить бухгалтера о новых транзакциях"
+  - "Запись в Audit Log"
+
+example:
+  event_id: "s10e8400-e29b-41d4-a716-446655440000"
+  enterprise_id: "aa0e8400-e29b-41d4-a716-446655440000"
+  tenant_id: "660e8400-e29b-41d4-a716-446655440000"
+  connector: "bank_sber"
+  account_number: "40702810100000000001"
+  period_start: "2025-01-01"
+  period_end: "2025-01-31"
+  transactions_processed: 45
+  documents_created: 38
+  synced_at: "2025-02-01T10:00:00Z"

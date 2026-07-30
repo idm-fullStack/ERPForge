@@ -1,0 +1,93 @@
+# ============================================
+# Команда: Синхронизация с банком
+# ============================================
+name: "SyncWithBank"
+description: "Синхронизация банковских выписок и операций"
+version: "1.0.0"
+
+inputs:
+  - enterprise_id:
+      type: uuid
+      required: true
+      description: "ID юридического лица"
+
+  - tenant_id:
+      type: uuid
+      required: true
+      description: "ID клиента"
+
+  - account_number:
+      type: string
+      required: true
+      description: "Номер банковского счета"
+
+  - connector:
+      type: string
+      required: true
+      enum: ["bank_sber", "bank_tinkoff", "bank_alfa", "bank_vtb"]
+      description: "Банк-коннектор"
+
+  - date_from:
+      type: date
+      required: true
+      description: "Дата начала"
+
+  - date_to:
+      type: date
+      required: true
+      description: "Дата окончания"
+
+pre_conditions:
+  - "Коннектор активен и настроен"
+  - "У пользователя есть право 'integrations.sync'"
+
+post_conditions:
+  - "Банковские транзакции синхронизированы"
+  - "Созданы документы PaymentOrder"
+
+process:
+  steps:
+    - name: "ValidateConnector"
+      check: "connector.status == 'active'"
+
+    - name: "GetBankStatements"
+      action: "GET {connector.endpoints.sync}?account={account_number}&from={date_from}&to={date_to}"
+
+    - name: "ProcessTransactions"
+      action: |
+        FOR each transaction:
+          IF transaction.type == "income":
+            CREATE PaymentOrder (type = 'incoming')
+          ELSE:
+            CREATE PaymentOrder (type = 'outgoing')
+
+    - name: "LinkCounterparty"
+      action: "Найти контрагента по ИНН или названию"
+
+    - name: "AutoPost"
+      condition: "auto_post_enabled"
+      action: "PostDocument"
+
+    - name: "LogSync"
+      action: "INSERT INTO sync_log"
+
+outputs:
+  - status:
+      type: string
+      enum: ["success", "partial", "failed"]
+
+  - transactions_processed:
+      type: integer
+
+  - documents_created:
+      type: integer
+
+  - errors:
+      type: array
+      nullable: true
+
+events:
+  on_success:
+    - BankSyncCompleted.yaml
+  on_failure:
+    - IntegrationFailed.yaml

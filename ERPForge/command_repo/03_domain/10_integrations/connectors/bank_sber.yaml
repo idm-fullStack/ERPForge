@@ -1,0 +1,81 @@
+# ============================================
+# Коннектор: СберБанк API
+# ============================================
+name: "bank_sber"
+type: connector
+version: "1.0.0"
+description: "Коннектор для интеграции со СберБанком"
+
+# Настройки подключения
+connection:
+  base_url: "https://api.sberbank.ru"
+  timeout: 30
+  retry: 3
+
+# Авторизация (OAuth2)
+auth:
+  type: "oauth2"
+  endpoints:
+    auth: "https://api.sberbank.ru/oauth/token"
+  credentials:
+    client_id: "{SBER_CLIENT_ID}"
+    client_secret: "{SBER_CLIENT_SECRET}"
+  scope: "statements payments"
+  grant_type: "client_credentials"
+
+# Операции
+operations:
+  # Получение выписок по счету
+  get_statements:
+    method: "GET"
+    path: "/rest/v2/statements"
+    params:
+      account: "{account_number}"
+      date_from: "{date_from}"
+      date_to: "{date_to}"
+    mapping:
+      result:
+        - id: "transaction_id"
+        - date: "operation_date"
+        - amount: "amount"
+        - description: "purpose"
+        - counterparty: "counterparty_name"
+
+  # Получение баланса
+  get_balance:
+    method: "GET"
+    path: "/rest/v2/balances"
+    params:
+      account: "{account_number}"
+
+  # Отправка платежного поручения
+  send_payment:
+    method: "POST"
+    path: "/rest/v2/payments"
+    payload:
+      account_from: "{account_number}"
+      account_to: "{target_account}"
+      amount: "{amount}"
+      purpose: "{payment_purpose}"
+      bic: "{bic}"
+
+# Синхронизация
+sync:
+  schedule: "daily"
+  batch_size: 100
+  full_sync: false
+
+# Обработка ошибок
+error_handling:
+  retry_on:
+    - "timeout"
+    - "rate_limit"
+  max_retries: 5
+  retry_delay: 300
+
+# Пример использования
+example:
+  statement_request:
+    account_number: "40702810100000000001"
+    date_from: "2025-01-01"
+    date_to: "2025-01-31"

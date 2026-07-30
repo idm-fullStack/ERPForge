@@ -1,0 +1,97 @@
+# ============================================
+# Коннектор: 1С:Бухгалтерия
+# ============================================
+name: "bank_1c"
+type: connector
+version: "1.0.0"
+description: "Коннектор для интеграции с 1С:Бухгалтерия"
+
+# Настройки подключения
+connection:
+  protocol: "http"
+  host: "{1C_HOST}"
+  port: 80
+  base_path: "/exchange/erpforge"
+  timeout: 30
+  retry: 3
+
+# Авторизация
+auth:
+  type: "basic_auth"
+  credentials:
+    username: "{1C_USER}"
+    password: "{1C_PASSWORD}"
+
+# Операции
+operations:
+  # Экспорт документов в 1С
+  export_documents:
+    method: "POST"
+    path: "/export/documents"
+    payload:
+      format: "json"
+      fields: ["id", "number", "date", "items", "total_amount"]
+    mapping:
+      sales_invoice:
+        target: "РеализацияТоваровУслуг"
+        fields:
+          id: "Ссылка"
+          number: "Номер"
+          date: "Дата"
+          total_amount: "СуммаДокумента"
+
+  # Импорт проводок из 1С
+  import_ledger:
+    method: "GET"
+    path: "/import/ledger"
+    params:
+      from_date: "{date_from}"
+      to_date: "{date_to}"
+
+# Правила синхронизации
+sync_rules:
+  - direction: "export"
+    source: "documents"
+    target: "1C_Documents"
+    schedule: "daily"
+
+  - direction: "import"
+    source: "1C_Ledger"
+    target: "ledger_entries"
+    schedule: "hourly"
+
+# Поля для маппинга
+mapping:
+  enterprise:
+    source: "legal_entities"
+    target: "Контрагенты"
+    fields:
+      name: "Наименование"
+      inn: "ИНН"
+      kpp: "КПП"
+
+  nomenclature:
+    source: "nomenclature"
+    target: "Номенклатура"
+    fields:
+      name: "Наименование"
+      sku: "Артикул"
+      price: "Цена"
+
+# Обработка ошибок
+error_handling:
+  retry_on:
+    - "timeout"
+    - "connection_refused"
+    - "server_error"
+  max_retries: 3
+  retry_delay: 60
+  notify_on_error: true
+  fallback_action: "queue"
+
+# Логирование
+logging:
+  log_requests: true
+  log_responses: true
+  sensitive_fields: ["password", "secret"]
+  retention_days: 30

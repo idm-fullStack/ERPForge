@@ -1,0 +1,91 @@
+# ============================================
+# Команда: Экспорт в 1С
+# ============================================
+name: "ExportTo1C"
+description: "Экспорт данных в 1С:Бухгалтерия"
+version: "1.0.0"
+
+inputs:
+  - enterprise_id:
+      type: uuid
+      required: true
+
+  - tenant_id:
+      type: uuid
+      required: true
+
+  - connector:
+      type: string
+      required: true
+      description: "Коннектор для 1С"
+      default: "1C_ACCOUNTING"
+
+  - export_type:
+      type: string
+      required: true
+      enum: ["documents", "ledger", "counterparties", "nomenclature", "all"]
+      description: "Тип экспортируемых данных"
+
+  - period_start:
+      type: date
+      required: true
+
+  - period_end:
+      type: date
+      required: true
+
+  - include_attachments:
+      type: boolean
+      default: false
+
+pre_conditions:
+  - "Коннектор к 1С настроен"
+  - "У пользователя есть право 'integrations.export'"
+
+post_conditions:
+  - "Данные экспортированы в 1С"
+  - "Статус синхронизации обновлен"
+
+process:
+  steps:
+    - name: "ValidateConnector"
+      check: "connector.status == 'active'"
+
+    - name: "PrepareData"
+      action: |
+        IF export_type == 'documents':
+          SELECT * FROM documents WHERE status = 'posted'
+        IF export_type == 'ledger':
+          SELECT * FROM ledger_entries
+        IF export_type == 'counterparties':
+          SELECT * FROM counterparty
+        IF export_type == 'nomenclature':
+          SELECT * FROM nomenclature
+
+    - name: "TransformData"
+      action: "Преобразование данных по маппингу"
+
+    - name: "SendTo1C"
+      action: "POST {1C_URL}/exchange/erpforge/export"
+      payload: "{transformed_data}"
+
+    - name: "SaveExportLog"
+      action: "INSERT INTO export_log (type, records, status)"
+
+outputs:
+  - status:
+      type: string
+      enum: ["success", "failed"]
+
+  - records_exported:
+      type: integer
+
+  - errors:
+      type: array
+      nullable: true
+
+events:
+  on_success:
+    - ExportCompleted.yaml
+  on_failure:
+    - IntegrationFailed.yaml

@@ -1,0 +1,125 @@
+# ============================================
+# Справочник: Webhook-уведомления
+# ============================================
+version: "1.0.0"
+type: registry
+name: "webhooks"
+description: "Справочник webhook-уведомлений для внешних систем"
+
+fields:
+  - id:
+      type: uuid
+      primary: true
+
+  - tenant_id:
+      type: uuid
+      required: true
+      indexed: true
+      description: "ID клиента"
+
+  - enterprise_id:
+      type: uuid
+      nullable: true
+      indexed: true
+      description: "ID юридического лица"
+
+  - name:
+      type: string
+      required: true
+      max_length: 200
+      description: "Название webhook"
+      example: "Уведомление о проведении документа"
+
+  - url:
+      type: string
+      required: true
+      format: uri
+      description: "URL для отправки уведомления"
+      example: "https://api.romashka.ru/webhooks/erpforge"
+
+  - events:
+      type: array
+      required: true
+      description: "Список событий для webhook"
+      items:
+        type: string
+        enum:
+          - "document.posted"
+          - "document.canceled"
+          - "payment.processed"
+          - "invoice.paid"
+          - "tax.calculated"
+          - "tax.paid"
+          - "lead.created"
+          - "deal.won"
+          - "deal.lost"
+          - "employee.hired"
+          - "employee.fired"
+          - "salary.calculated"
+          - "inventory.updated"
+          - "cogs.calculated"
+
+  - format:
+      type: string
+      enum: ["json", "xml", "form"]
+      default: "json"
+      description: "Формат данных"
+
+  - headers:
+      type: object
+      description: "HTTP заголовки"
+      properties:
+        Authorization: { type: string }
+        X-API-Key: { type: string }
+      example: |
+        Authorization: "Bearer token123"
+        X-API-Key: "api_key_456"
+
+  - retry_config:
+      type: object
+      description: "Настройки переотправки"
+      properties:
+        max_attempts: { type: integer, default: 3 }
+        retry_delay_seconds: { type: integer, default: 60 }
+        backoff_multiplier: { type: number, default: 2.0 }
+
+  - timeout_seconds:
+      type: integer
+      default: 10
+      min: 1
+      max: 60
+
+  - status:
+      type: string
+      indexed: true
+      enum: ["active", "inactive", "failed"]
+      default: "active"
+
+  - is_test:
+      type: boolean
+      default: false
+
+  - created_at:
+      type: datetime
+      default: "now()"
+
+  - updated_at:
+      type: datetime
+      default: "now()"
+
+examples:
+  - id: "r11e8400-e29b-41d4-a716-446655440000"
+    tenant_id: "660e8400-e29b-41d4-a716-446655440000"
+    enterprise_id: "aa0e8400-e29b-41d4-a716-446655440000"
+    name: "Уведомление о проведении документов"
+    url: "https://api.romashka.ru/webhooks/erpforge/documents"
+    events: ["document.posted", "document.canceled"]
+    format: "json"
+    headers:
+      Authorization: "Bearer token123"
+    retry_config:
+      max_attempts: 3
+      retry_delay_seconds: 60
+      backoff_multiplier: 2.0
+    timeout_seconds: 10
+    status: "active"

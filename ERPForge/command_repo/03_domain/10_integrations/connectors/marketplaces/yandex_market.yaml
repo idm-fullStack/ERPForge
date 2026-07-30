@@ -1,0 +1,58 @@
+# ============================================
+# Коннектор: Яндекс Маркет
+# ============================================
+name: "yandex_market"
+type: connector
+version: "1.0.0"
+description: "Коннектор для интеграции с Яндекс Маркет"
+
+# Настройки подключения
+connection:
+  base_url: "https://api.yandex.ru"
+  timeout: 30
+  retry: 3
+
+# Авторизация
+auth:
+  type: "oauth2"
+  endpoints:
+    auth: "https://oauth.yandex.ru/token"
+  credentials:
+    client_id: "{YM_CLIENT_ID}"
+    client_secret: "{YM_CLIENT_SECRET}"
+  scope: "market"
+  grant_type: "client_credentials"
+
+# Операции
+operations:
+  # Синхронизация товаров
+  sync_products:
+    method: "POST"
+    path: "/market/v2/products/sync"
+    payload:
+      products:
+        - id: "{id}"
+          name: "{name}"
+          price: "{price}"
+          stock: "{stock}"
+          category: "{category}"
+
+  # Получение заказов
+  get_orders:
+    method: "GET"
+    path: "/market/v2/orders"
+    params:
+      from: "{date_from}"
+      status: "new"
+
+  # Статистика продаж
+  get_stats:
+    method: "GET"
+    path: "/market/v2/stats"
+    params:
+      period: "month"
+
+# Синхронизация
+sync:
+  schedule: "every_6_hours"
+  batch_size: 50
