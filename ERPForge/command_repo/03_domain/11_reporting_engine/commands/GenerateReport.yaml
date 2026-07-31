@@ -1,0 +1,107 @@
+# ============================================
+# Команда: Генерация отчета
+# ============================================
+name: "GenerateReport"
+description: "Генерация отчета по шаблону"
+version: "1.0.0"
+
+inputs:
+  - template_id:
+      type: uuid
+      required: true
+      description: "ID шаблона отчета"
+
+  - enterprise_id:
+      type: uuid
+      required: true
+      description: "ID юридического лица"
+
+  - parameters:
+      type: object
+      required: true
+      description: "Параметры отчета"
+      example: |
+        date_from: "2025-01-01"
+        date_to: "2025-12-31"
+
+  - format:
+      type: string
+      enum: ["pdf", "xlsx", "csv", "json", "html"]
+      default: "pdf"
+
+  - user_id:
+      type: uuid
+      required: true
+      description: "ID пользователя"
+
+pre_conditions:
+  - "Шаблон существует и активен"
+  - "У пользователя есть право 'reports.view'"
+  - "Все обязательные параметры заполнены"
+
+post_conditions:
+  - "Отчет сгенерирован"
+  - "Отчет сохранен"
+  - "Запись в Audit Log"
+
+process:
+  steps:
+    - name: "ValidateTemplate"
+      check: "template.is_active == true"
+
+    - name: "GetTemplateConfig"
+      action: "SELECT * FROM report_templates WHERE id = '{template_id}'"
+
+    - name: "ValidateParams"
+      action: "Проверить наличие всех обязательных параметров"
+
+    - name: "ExecuteQuery"
+      action: "Выполнить SQL запрос с подстановкой параметров"
+
+    - name: "ProcessData"
+      action: |
+        IF format == 'pdf':
+          Сгенерировать PDF с графиками
+        IF format == 'xlsx':
+          Сгенерировать Excel с формулами
+        IF format == 'csv':
+          Экспорт в CSV
+
+    - name: "SaveReport"
+      action: "Сохранить отчет в storage"
+
+    - name: "LogGeneration"
+      action: "INSERT INTO report_log"
+
+outputs:
+  - status:
+      type: string
+      enum: ["success", "failed"]
+
+  - report_id:
+      type: uuid
+      description: "ID сгенерированного отчета"
+
+  - report_url:
+      type: string
+      description: "Ссылка на отчет"
+
+  - errors:
+      type: array
+      nullable: true
+
+events:
+  on_success:
+    - ReportGenerated.yaml
+  on_failure:
+    - ReportGenerationFailed.yaml
+
+example:
+  inputs:
+    template_id: "t10e8400-e29b-41d4-a716-446655440000"
+    enterprise_id: "aa0e8400-e29b-41d4-a716-446655440000"
+    parameters:
+      date_from: "2025-01-01"
+      date_to: "2025-12-31"
+    format: "pdf"
+    user_id: "550e8400-e29b-41d4-a716-446655440001"

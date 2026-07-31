@@ -1,0 +1,483 @@
+# ============================================
+# Справочник: Шаблоны отчетов (Report Templates)
+# ============================================
+version: "1.0.0"
+type: registry
+name: "report_templates"
+description: "Справочник шаблонов для генерации отчетов"
+
+fields:
+  - id:
+      type: uuid
+      primary: true
+      description: "Уникальный идентификатор шаблона"
+
+  - code:
+      type: string
+      required: true
+      unique: true
+      indexed: true
+      max_length: 50
+      description: "Кодовое имя шаблона"
+      example: "P_L"
+
+  - name:
+      type: string
+      required: true
+      max_length: 200
+      description: "Название отчета"
+      example: "Отчет о прибылях и убытках"
+
+  - description:
+      type: string
+      max_length: 500
+      description: "Описание отчета"
+      example: "Финансовый отчет о прибылях и убытках за период"
+
+  - category:
+      type: string
+      required: true
+      indexed: true
+      enum: ["financial", "tax", "management", "sales", "inventory", "hr", "crm"]
+      description: "Категория отчета"
+      example: "financial"
+
+  - type:
+      type: string
+      required: true
+      enum: ["standard", "custom", "tax", "regulatory"]
+      default: "standard"
+      description: "Тип отчета"
+
+  - data_source:
+      type: object
+      required: true
+      description: "Источник данных для отчета"
+      properties:
+        type:
+          type: string
+          enum: ["sql", "api", "aggregate", "view"]
+          default: "sql"
+        query:
+          type: string
+          description: "SQL запрос или путь"
+        schema:
+          type: string
+          description: "Схема данных"
+        tables:
+          type: array
+          items: { type: string }
+          description: "Таблицы-источники"
+
+  - parameters:
+      type: array
+      description: "Параметры отчета"
+      items:
+        type: object
+        properties:
+          id: { type: string }
+          name: { type: string }
+          type:
+            type: string
+            enum: ["date", "datetime", "text", "number", "select", "multi_select", "boolean"]
+          required: { type: boolean, default: false }
+          default: { type: string }
+          options:
+            type: array
+            items:
+              type: object
+              properties:
+                value: { type: string }
+                label: { type: string }
+
+  - columns:
+      type: array
+      required: true
+      description: "Колонки отчета"
+      items:
+        type: object
+        required: ["id", "name", "type"]
+        properties:
+          id: { type: string }
+          name: { type: string }
+          type:
+            type: string
+            enum: ["string", "number", "currency", "date", "datetime", "percentage", "boolean"]
+          format: { type: string }
+          width: { type: string, default: "auto" }
+          visible: { type: boolean, default: true }
+          sortable: { type: boolean, default: true }
+          filterable: { type: boolean, default: false }
+          aggregation:
+            type: string
+            enum: ["sum", "avg", "count", "min", "max", "none"]
+            default: "none"
+          color:
+            type: object
+            properties:
+              positive: { type: string }
+              negative: { type: string }
+
+  - aggregations:
+      type: object
+      description: "Агрегации для отчета"
+      properties:
+        group_by:
+          type: array
+          items: { type: string }
+        totals:
+          type: array
+          items: { type: string }
+        subtotals:
+          type: array
+          items:
+            type: object
+            properties:
+              field: { type: string }
+              label: { type: string }
+
+  - filters:
+      type: array
+      description: "Фильтры отчета"
+      items:
+        type: object
+        properties:
+          id: { type: string }
+          field: { type: string }
+          type:
+            type: string
+            enum: ["text", "date", "select", "multi_select", "number"]
+          label: { type: string }
+          default: { type: string }
+
+  - charts:
+      type: array
+      description: "Графики для отчета"
+      items:
+        type: object
+        properties:
+          id: { type: string }
+          type:
+            type: string
+            enum: ["bar", "line", "pie", "donut", "area", "scatter", "gauge", "funnel"]
+          title: { type: string }
+          x_axis: { type: string }
+          y_axis: { type: string }
+          series:
+            type: array
+            items: { type: string }
+          position:
+            type: string
+            enum: ["top", "bottom", "left", "right"]
+            default: "top"
+          size:
+            type: string
+            enum: ["small", "medium", "large", "full"]
+            default: "medium"
+
+  - export_formats:
+      type: array
+      description: "Доступные форматы экспорта"
+      items:
+        type: string
+        enum: ["pdf", "xlsx", "csv", "json", "html"]
+      default: ["pdf", "xlsx"]
+
+  - permissions:
+      type: object
+      description: "Права доступа"
+      properties:
+        view:
+          type: array
+          items: { type: string }
+        export:
+          type: array
+          items: { type: string }
+        schedule:
+          type: array
+          items: { type: string }
+        edit:
+          type: array
+          items: { type: string }
+
+  - is_active:
+      type: boolean
+      default: true
+
+  - created_at:
+      type: datetime
+      default: "now()"
+
+  - updated_at:
+      type: datetime
+      default: "now()"
+
+examples:
+  - id: "t10e8400-e29b-41d4-a716-446655440000"
+    code: "P_L"
+    name: "Отчет о прибылях и убытках"
+    description: "Финансовый отчет о прибылях и убытках за период"
+    category: "financial"
+    type: "standard"
+    data_source:
+      type: "sql"
+      query: |
+        SELECT 
+          account_code,
+          account_name,
+          SUM(debit) as debit,
+          SUM(credit) as credit,
+          SUM(debit - credit) as balance
+        FROM ledger_entries
+        WHERE enterprise_id = '{enterprise_id}'
+          AND posting_date BETWEEN '{date_from}' AND '{date_to}'
+        GROUP BY account_code, account_name
+        ORDER BY account_code
+      tables: ["ledger_entries", "chart_of_accounts"]
+    parameters:
+      - id: "enterprise_id"
+        name: "Юридическое лицо"
+        type: "select"
+        required: true
+      - id: "date_from"
+        name: "Дата с"
+        type: "date"
+        required: true
+        default: "first_day_of_month"
+      - id: "date_to"
+        name: "Дата по"
+        type: "date"
+        required: true
+        default: "today"
+    columns:
+      - id: "account_code"
+        name: "Код счета"
+        type: "string"
+        width: "120px"
+      - id: "account_name"
+        name: "Наименование счета"
+        type: "string"
+        width: "300px"
+      - id: "debit"
+        name: "Дебет"
+        type: "currency"
+        format: "decimal"
+        aggregation: "sum"
+      - id: "credit"
+        name: "Кредит"
+        type: "currency"
+        format: "decimal"
+        aggregation: "sum"
+      - id: "balance"
+        name: "Баланс"
+        type: "currency"
+        format: "decimal"
+        color:
+          positive: "#4CAF50"
+          negative: "#F44336"
+    aggregations:
+      group_by: ["account_code"]
+      totals: ["debit", "credit", "balance"]
+    filters:
+      - id: "account_type"
+        field: "account_type"
+        type: "select"
+        label: "Тип счета"
+        options:
+          - { value: "active", label: "Активные" }
+          - { value: "passive", label: "Пассивные" }
+          - { value: "active_passive", label: "Активно-пассивные" }
+    charts:
+      - id: "balance_chart"
+        type: "bar"
+        title: "Баланс по счетам"
+        x_axis: "account_name"
+        y_axis: "balance"
+        position: "bottom"
+        size: "large"
+    export_formats: ["pdf", "xlsx", "csv"]
+    permissions:
+      view: ["accountant", "admin", "manager"]
+      export: ["accountant", "admin"]
+    is_active: true
+
+  - id: "t10e8400-e29b-41d4-a716-446655440001"
+    code: "BALANCE"
+    name: "Бухгалтерский баланс"
+    description: "Баланс предприятия за период"
+    category: "financial"
+    type: "regulatory"
+    data_source:
+      type: "sql"
+      query: |
+        SELECT 
+          section,
+          asset_code,
+          asset_name,
+          amount_start,
+          amount_end
+        FROM balance_sheet_view
+        WHERE enterprise_id = '{enterprise_id}'
+          AND period = '{period}'
+    parameters:
+      - id: "enterprise_id"
+        name: "Юридическое лицо"
+        type: "select"
+        required: true
+      - id: "period"
+        name: "Период"
+        type: "select"
+        required: true
+        options:
+          - { value: "2024", label: "2024 год" }
+          - { value: "2025", label: "2025 год" }
+    columns:
+      - id: "section"
+        name: "Раздел"
+        type: "string"
+      - id: "asset_code"
+        name: "Код"
+        type: "string"
+      - id: "asset_name"
+        name: "Наименование"
+        type: "string"
+      - id: "amount_start"
+        name: "На начало"
+        type: "currency"
+      - id: "amount_end"
+        name: "На конец"
+        type: "currency"
+    export_formats: ["pdf", "xlsx"]
+    permissions:
+      view: ["accountant", "admin"]
+
+  - id: "t10e8400-e29b-41d4-a716-446655440002"
+    code: "CASH_FLOW"
+    name: "Отчет о движении денежных средств"
+    description: "CashFlow отчет за период"
+    category: "financial"
+    type: "standard"
+    data_source:
+      type: "sql"
+      query: |
+        SELECT 
+          operation_date,
+          operation_type,
+          amount,
+          counterparty,
+          description
+        FROM cash_flow_view
+        WHERE enterprise_id = '{enterprise_id}'
+          AND operation_date BETWEEN '{date_from}' AND '{date_to}'
+    parameters:
+      - id: "enterprise_id"
+        name: "Юридическое лицо"
+        type: "select"
+        required: true
+      - id: "date_from"
+        name: "Дата с"
+        type: "date"
+        required: true
+      - id: "date_to"
+        name: "Дата по"
+        type: "date"
+        required: true
+    columns:
+      - id: "operation_date"
+        name: "Дата"
+        type: "date"
+      - id: "operation_type"
+        name: "Тип операции"
+        type: "string"
+      - id: "amount"
+        name: "Сумма"
+        type: "currency"
+        color:
+          positive: "#4CAF50"
+          negative: "#F44336"
+      - id: "counterparty"
+        name: "Контрагент"
+        type: "string"
+      - id: "description"
+        name: "Назначение"
+        type: "string"
+    charts:
+      - id: "cash_flow_chart"
+        type: "line"
+        title: "Динамика денежных потоков"
+        x_axis: "operation_date"
+        y_axis: "amount"
+        position: "top"
+        size: "large"
+    export_formats: ["pdf", "xlsx", "csv"]
+    permissions:
+      view: ["accountant", "admin", "manager"]
+      export: ["accountant", "admin"]
+
+  - id: "t10e8400-e29b-41d4-a716-446655440003"
+    code: "MNGMT"
+    name: "Управленческий отчет"
+    description: "Управленческий отчет по бизнесу"
+    category: "management"
+    type: "custom"
+    data_source:
+      type: "aggregate"
+      query: |
+        SELECT 
+          product_id,
+          product_name,
+          SUM(revenue) as revenue,
+          SUM(cogs) as cogs,
+          SUM(margin) as margin,
+          margin_percent
+        FROM product_margin_view
+        WHERE enterprise_id = '{enterprise_id}'
+          AND period BETWEEN '{period_from}' AND '{period_to}'
+        GROUP BY product_id, product_name, margin_percent
+    parameters:
+      - id: "enterprise_id"
+        name: "Юридическое лицо"
+        type: "select"
+        required: true
+      - id: "period_from"
+        name: "Период с"
+        type: "date"
+        required: true
+      - id: "period_to"
+        name: "Период по"
+        type: "date"
+        required: true
+    columns:
+      - id: "product_name"
+        name: "Товар/услуга"
+        type: "string"
+      - id: "revenue"
+        name: "Выручка"
+        type: "currency"
+        aggregation: "sum"
+      - id: "cogs"
+        name: "Себестоимость"
+        type: "currency"
+        aggregation: "sum"
+      - id: "margin"
+        name: "Маржинальный доход"
+        type: "currency"
+        aggregation: "sum"
+      - id: "margin_percent"
+        name: "Маржинальность %"
+        type: "percentage"
+        color:
+          positive: "#4CAF50"
+          negative: "#F44336"
+    charts:
+      - id: "margin_chart"
+        type: "funnel"
+        title: "Воронка маржинальности"
+        x_axis: "product_name"
+        y_axis: "margin_percent"
+        position: "bottom"
+        size: "large"
+    export_formats: ["pdf", "xlsx", "csv"]
+    permissions:
+      view: ["admin", "manager"]
+      export: ["admin", "manager"]

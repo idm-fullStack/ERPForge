@@ -1,0 +1,136 @@
+# ============================================
+# Справочник: Расписания отчетов
+# ============================================
+version: "1.0.0"
+type: registry
+name: "report_schedules"
+description: "Расписания автоматической генерации отчетов"
+
+fields:
+  - id:
+      type: uuid
+      primary: true
+
+  - tenant_id:
+      type: uuid
+      required: true
+      indexed: true
+      description: "ID клиента"
+
+  - enterprise_id:
+      type: uuid
+      required: true
+      indexed: true
+      description: "ID юридического лица"
+
+  - template_id:
+      type: uuid
+      required: true
+      foreign_key: "report_templates.id"
+      description: "ID шаблона отчета"
+
+  - name:
+      type: string
+      required: true
+      max_length: 200
+      description: "Название расписания"
+      example: "Ежемесячный финансовый отчет"
+
+  - frequency:
+      type: string
+      required: true
+      enum: ["daily", "weekly", "monthly", "quarterly", "yearly", "custom"]
+      description: "Частота генерации"
+      example: "monthly"
+
+  - cron_expression:
+      type: string
+      description: "Cron выражение для кастомной настройки"
+      example: "0 9 1 * *"
+
+  - parameters:
+      type: object
+      description: "Параметры для отчета"
+      example: |
+        date_from: "first_day_of_month"
+        date_to: "today"
+
+  - recipients:
+      type: array
+      required: true
+      description: "Список получателей"
+      items:
+        type: object
+        properties:
+          type:
+            type: string
+            enum: ["email", "telegram", "webhook"]
+          address:
+            type: string
+          name:
+            type: string
+
+  - export_format:
+      type: string
+      enum: ["pdf", "xlsx", "csv", "json"]
+      default: "pdf"
+      description: "Формат экспорта"
+
+  - delivery_method:
+      type: string
+      enum: ["email", "telegram", "webhook", "storage"]
+      default: "email"
+
+  - storage_location:
+      type: string
+      description: "Место хранения отчета"
+      example: "s3://reports/monthly/"
+
+  - last_run_at:
+      type: datetime
+      nullable: true
+      description: "Последний запуск"
+
+  - last_run_status:
+      type: string
+      nullable: true
+      enum: ["success", "failed", "pending"]
+
+  - next_run_at:
+      type: datetime
+      nullable: true
+      description: "Следующий запуск"
+
+  - is_active:
+      type: boolean
+      default: true
+
+  - created_at:
+      type: datetime
+      default: "now()"
+
+  - updated_at:
+      type: datetime
+      default: "now()"
+
+examples:
+  - id: "t11e8400-e29b-41d4-a716-446655440000"
+    tenant_id: "660e8400-e29b-41d4-a716-446655440000"
+    enterprise_id: "aa0e8400-e29b-41d4-a716-446655440000"
+    template_id: "t10e8400-e29b-41d4-a716-446655440000"
+    name: "Ежемесячный финансовый отчет"
+    frequency: "monthly"
+    cron_expression: "0 9 1 * *"
+    parameters:
+      date_from: "first_day_of_month"
+      date_to: "today"
+    recipients:
+      - type: "email"
+        address: "accountant@company.ru"
+        name: "Главный бухгалтер"
+      - type: "telegram"
+        address: "@ceo"
+        name: "CEO"
+    export_format: "pdf"
+    delivery_method: "email"
+    is_active: true

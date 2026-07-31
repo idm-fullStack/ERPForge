@@ -1,0 +1,73 @@
+# ============================================
+# Запрос: Отчет о прибылях и убытках
+# ============================================
+name: "ProfitAndLoss"
+description: "Отчет о прибылях и убытках (P&L)"
+version: "1.0.0"
+
+inputs:
+  - enterprise_id:
+      type: uuid
+      required: true
+      description: "ID юридического лица"
+
+  - date_from:
+      type: date
+      required: true
+      description: "Дата начала периода"
+
+  - date_to:
+      type: date
+      required: true
+      description: "Дата окончания периода"
+
+  - account_type:
+      type: string
+      enum: ["all", "income", "expense"]
+      default: "all"
+
+sql:
+  query: |
+    SELECT 
+      account_code,
+      account_name,
+      account_type,
+      SUM(debit_amount) as debit,
+      SUM(credit_amount) as credit,
+      SUM(CASE WHEN account_type = 'income' THEN credit_amount ELSE 0 END) as income,
+      SUM(CASE WHEN account_type = 'expense' THEN debit_amount ELSE 0 END) as expense
+    FROM ledger_entries le
+    JOIN chart_of_accounts coa ON le.account_code = coa.code
+    WHERE le.enterprise_id = '{enterprise_id}'
+      AND le.posting_date BETWEEN '{date_from}' AND '{date_to}'
+      {account_type_filter}
+    GROUP BY account_code, account_name, account_type
+    ORDER BY account_type, account_code
+
+outputs:
+  - columns:
+      - "account_code"
+      - "account_name"
+      - "account_type"
+      - "debit"
+      - "credit"
+      - "income"
+      - "expense"
+  
+  - summary:
+      - type: "total_income"
+        label: "Всего доходов"
+        source: "SUM(income)"
+      - type: "total_expense"
+        label: "Всего расходов"
+        source: "SUM(expense)"
+      - type: "net_profit"
+        label: "Чистая прибыль"
+        source: "total_income - total_expense"
+
+example:
+  inputs:
+    enterprise_id: "aa0e8400-e29b-41d4-a716-446655440000"
+    date_from: "2025-01-01"
+    date_to: "2025-12-31"
+    account_type: "all"

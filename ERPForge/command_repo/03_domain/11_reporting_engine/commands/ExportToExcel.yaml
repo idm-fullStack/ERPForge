@@ -1,0 +1,87 @@
+# ============================================
+# Команда: Экспорт в Excel
+# ============================================
+name: "ExportToExcel"
+description: "Экспорт данных в Excel с форматированием"
+version: "1.0.0"
+
+inputs:
+  - data_source:
+      type: object
+      required: true
+      description: "Данные для экспорта"
+      properties:
+        type:
+          type: string
+          enum: ["query", "report", "table", "custom"]
+        source:
+          type: string
+          description: "SQL запрос или ID отчета"
+
+  - columns:
+      type: array
+      required: true
+      description: "Колонки для экспорта"
+      items:
+        type: object
+        properties:
+          id: { type: string }
+          name: { type: string }
+          type: { type: string }
+          width: { type: integer }
+
+  - options:
+      type: object
+      description: "Опции экспорта"
+      properties:
+        include_header: { type: boolean, default: true }
+        include_formulas: { type: boolean, default: false }
+        include_charts: { type: boolean, default: false }
+        sheet_name: { type: string, default: "Data" }
+        auto_width: { type: boolean, default: true }
+        freeze_panes: { type: string, default: "A2" }
+
+  - user_id:
+      type: uuid
+      required: true
+
+process:
+  steps:
+    - name: "FetchData"
+      action: "Получить данные из источника"
+
+    - name: "CreateWorkbook"
+      action: "Создать Excel workbook"
+
+    - name: "AddData"
+      action: "Записать данные в лист"
+
+    - name: "ApplyFormatting"
+      action: |
+        - Установить ширину колонок
+        - Применить форматы чисел/дат
+        - Добавить условное форматирование
+
+    - name: "AddCharts"
+      condition: "include_charts == true"
+      action: "Добавить графики на отдельный лист"
+
+    - name: "SaveFile"
+      action: "Сохранить файл"
+
+outputs:
+  - status:
+      type: string
+      enum: ["success", "failed"]
+
+  - file_url:
+      type: string
+      description: "Ссылка на файл"
+
+  - file_size:
+      type: integer
+      description: "Размер файла в байтах"
+
+  - errors:
+      type: array
+      nullable: true

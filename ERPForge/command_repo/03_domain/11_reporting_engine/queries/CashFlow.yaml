@@ -1,0 +1,59 @@
+# ============================================
+# Запрос: Отчет о движении денежных средств (CashFlow)
+# ============================================
+name: "CashFlow"
+description: "Отчет о движении денежных средств"
+version: "1.0.0"
+
+inputs:
+  - enterprise_id:
+      type: uuid
+      required: true
+
+  - date_from:
+      type: date
+      required: true
+
+  - date_to:
+      type: date
+      required: true
+
+  - currency:
+      type: string
+      default: "RUB"
+      enum: ["RUB", "USD", "EUR"]
+
+sql:
+  query: |
+    SELECT 
+      operation_date,
+      operation_type,
+      amount,
+      counterparty_name,
+      purpose,
+      balance_after
+    FROM cash_flow_view
+    WHERE enterprise_id = '{enterprise_id}'
+      AND operation_date BETWEEN '{date_from}' AND '{date_to}'
+      AND currency = '{currency}'
+    ORDER BY operation_date
+
+outputs:
+  - summary:
+      - type: "operating_activities"
+        label: "Операционная деятельность"
+      - type: "investing_activities"
+        label: "Инвестиционная деятельность"
+      - type: "financing_activities"
+        label: "Финансовая деятельность"
+      - type: "net_change"
+        label: "Чистое изменение"
+      - type: "ending_balance"
+        label: "Остаток на конец периода"
+
+example:
+  inputs:
+    enterprise_id: "aa0e8400-e29b-41d4-a716-446655440000"
+    date_from: "2025-01-01"
+    date_to: "2025-12-31"
+    currency: "RUB"
