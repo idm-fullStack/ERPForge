@@ -1,0 +1,94 @@
+# ============================================
+# Событие: AI-ответ сгенерирован
+# ============================================
+name: "AIResponseGenerated"
+description: "AI-ассистент сгенерировал ответ"
+version: "1.0.0"
+
+fields:
+  - event_id:
+      type: uuid
+      required: true
+
+  - tenant_id:
+      type: uuid
+      required: true
+
+  - user_id:
+      type: uuid
+      required: true
+
+  - session_id:
+      type: uuid
+      required: true
+
+  - model_type:
+      type: string
+      required: true
+      enum: ["chat_bot", "auto_complete", "forecast"]
+
+  - request_type:
+      type: string
+      required: true
+
+  - request:
+      type: object
+      required: true
+      description: "Запрос пользователя"
+
+  - response:
+      type: object
+      required: true
+      description: "Ответ AI"
+
+  - confidence_score:
+      type: numeric
+      nullable: true
+      description: "Уверенность AI в ответе"
+
+  - processing_time_ms:
+      type: integer
+      required: true
+      description: "Время обработки в мс"
+
+  - tokens_used:
+      type: integer
+      nullable: true
+      description: "Количество использованных токенов"
+
+  - success:
+      type: boolean
+      required: true
+
+  - error_message:
+      type: string
+      nullable: true
+
+  - created_at:
+      type: datetime
+      required: true
+
+reactions:
+  - "Сохранить историю диалога"
+  - "Обновить статистику использования AI"
+  - "Запись в Audit Log"
+
+example:
+  event_id: "z10e8400-e29b-41d4-a716-446655440000"
+  tenant_id: "660e8400-e29b-41d4-a716-446655440000"
+  user_id: "550e8400-e29b-41d4-a716-446655440001"
+  session_id: "sess_12345"
+  model_type: "chat_bot"
+  request_type: "posting_help"
+  request:
+    operation_type: "реализация товаров"
+    amount: 159800.00
+    counterparty: "ООО Ромашка"
+  response:
+    text: "Проводки для реализации товаров..."
+    postings: [...]
+  confidence_score: 0.92
+  processing_time_ms: 1245
+  tokens_used: 342
+  success: true
+  created_at: "2025-01-15T14:30:00Z"

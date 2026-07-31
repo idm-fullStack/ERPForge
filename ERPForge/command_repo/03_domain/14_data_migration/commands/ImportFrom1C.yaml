@@ -1,0 +1,138 @@
+# ============================================
+# Команда: Импорт данных из 1С
+# ============================================
+name: "ImportFrom1C"
+description: "Импорт данных из 1С:Бухгалтерия в ERPForge"
+version: "1.0.0"
+
+inputs:
+  - tenant_id:
+      type: uuid
+      required: true
+      description: "ID клиента"
+
+  - enterprise_id:
+      type: uuid
+      required: true
+      description: "ID юридического лица"
+
+  - file_url:
+      type: string
+      required: true
+      format: uri
+      description: "URL XML файла из 1С"
+
+  - entity_types:
+      type: array
+      required: true
+      description: "Типы сущностей для импорта"
+      items:
+        type: string
+        enum:
+          - "legal_entities"
+          - "employees"
+          - "counterparties"
+          - "nomenclature"
+          - "documents"
+          - "ledger"
+
+  - skip_duplicates:
+      type: boolean
+      default: false
+      description: "Пропускать дубликаты"
+
+  - user_id:
+      type: uuid
+      required: true
+      description: "ID пользователя"
+
+pre_conditions:
+  - "Файл доступен"
+  - "У пользователя есть право 'migration.import'"
+  - "Юридическое лицо существует"
+
+post_conditions:
+  - "Данные импортированы"
+  - "Создан отчет о миграции"
+  - "Запись в Audit Log"
+
+process:
+  steps:
+    - name: "DownloadFile"
+      action: "Скачать файл из {file_url}"
+
+    - name: "ParseXML"
+      action: "Распарсить XML файл 1С"
+
+    - name: "ProcessEntities"
+      action: |
+        FOR each entity_type in entity_types:
+          mapping = get_mapping('1c_entities', entity_type)
+          data = extract_entities(parsed_xml, mapping)
+          FOR each entity in data:
+            entity.tenant_id = tenant_id
+            entity.enterprise_id = enterprise_id
+            IF skip_duplicates AND duplicate_exists(entity):
+              SKIP
+            ELSE:
+              INSERT INTO target_table (entity)
+
+    - name: "CreateRelations"
+      action: "Создать связи между импортированными сущностями"
+
+    - name: "ValidateImportedData"
+      action: "Запустить валидацию импортированных данных"
+
+    - name: "GenerateMigrationReport"
+      action: "Создать отчет о миграции"
+
+    - name: "LogImport"
+      action: "INSERT INTO migration_log"
+
+outputs:
+  - status:
+      type: string
+      enum: ["success", "partial", "failed"]
+
+  - imported_entities:
+      type: object
+      properties:
+        legal_entities: { type: integer }
+        employees: { type: integer }
+        counterparties: { type: integer }
+        nomenclature: { type: integer }
+        documents: { type: integer }
+        ledger: { type: integer }
+
+  - skipped_entities:
+      type: object
+      properties:
+        legal_entities: { type: integer }
+        employees: { type: integer }
+        counterparties: { type: integer }
+        nomenclature: { type: integer }
+        documents: { type: integer }
+        ledger: { type: integer }
+
+  - errors:
+      type: array
+      nullable: true
+
+  - report_url:
+      type: string
+      description: "Ссылка на отчет о миграции"
+
+events:
+  on_success:
+    - MigrationCompleted.yaml
+  on_failure:
+    - MigrationFailed.yaml
+
+example:
+  inputs:
+    tenant_id: "660e8400-e29b-41d4-a716-446655440000"
+    enterprise_id: "aa0e8400-e29b-41d4-a716-446655440000"
+    file_url: "https://storage.erpforge.com/migration/1c_export_20250115.xml"
+    entity_types: ["legal_entities", "counterparties", "nomenclature", "documents"]
+    skip_duplicates: true
+    user_id: "550e8400-e29b-41d4-a716-446655440001"

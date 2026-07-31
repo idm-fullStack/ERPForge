@@ -1,0 +1,392 @@
+# ============================================
+# Маппинг: 1С → ERPForge
+# ============================================
+version: "1.0.0"
+type: mapping
+name: "1c_entities"
+description: "Маппинг сущностей из 1С:Бухгалтерия в ERPForge"
+
+source_system:
+  name: "1C:Бухгалтерия"
+  version: "8.3"
+  format: "xml"
+
+target_system:
+  name: "ERPForge"
+  version: "1.0.0"
+
+mappings:
+  # ============================================
+  # ЮРИДИЧЕСКИЕ ЛИЦА
+  # ============================================
+  legal_entities:
+    source: "Контрагенты"
+    target: "legal_entities"
+    fields:
+      - source: "Наименование"
+        target: "name"
+        required: true
+        transform: "trim"
+      
+      - source: "ИНН"
+        target: "inn"
+        required: true
+        transform: "remove_dashes"
+      
+      - source: "КПП"
+        target: "kpp"
+        required: false
+      
+      - source: "ОГРН"
+        target: "ogrn"
+        required: false
+      
+      - source: "ЮрАдрес"
+        target: "legal_address"
+        required: false
+      
+      - source: "ФактАдрес"
+        target: "actual_address"
+        required: false
+      
+      - source: "Телефон"
+        target: "phone"
+        required: false
+      
+      - source: "Email"
+        target: "email"
+        required: false
+      
+      - source: "Руководитель"
+        target: "director.full_name"
+        required: false
+        transform: "split_full_name"
+      
+      - source: "Налоговая система"
+        target: "tax_system"
+        required: true
+        transform: "map_tax_system"
+        rules:
+          "ОСН": "osno"
+          "УСН Доходы": "usn_income"
+          "УСН Доходы-Расходы": "usn_expenses"
+          "Патент": "patent"
+      
+      - source: "ДатаРегистрации"
+        target: "registration_date"
+        required: false
+        transform: "parse_date"
+      
+      - source: "Регистрационный орган"
+        target: "registration_authority"
+        required: false
+
+    # Связи
+    relations:
+      - source: "Головная организация"
+        target: "parent_id"
+        lookup: "legal_entities"
+
+    # Банковские счета
+    bank_accounts:
+      source: "БанковскиеСчета"
+      target: "bank_accounts"
+      fields:
+        - source: "РасчетныйСчет"
+          target: "account_number"
+          required: true
+        - source: "Банк"
+          target: "bank_name"
+          required: true
+        - source: "БИК"
+          target: "bik"
+          required: true
+        - source: "КоррСчет"
+          target: "corr_account"
+          required: false
+        - source: "Валюта"
+          target: "currency"
+          default: "RUB"
+        - source: "Основной"
+          target: "is_primary"
+          default: false
+          transform: "to_boolean"
+
+  # ============================================
+  # СОТРУДНИКИ
+  # ============================================
+  employees:
+    source: "Сотрудники"
+    target: "employees"
+    fields:
+      - source: "ТабельныйНомер"
+        target: "employee_number"
+        required: true
+      
+      - source: "Фамилия"
+        target: "last_name"
+        required: true
+      
+      - source: "Имя"
+        target: "first_name"
+        required: true
+      
+      - source: "Отчество"
+        target: "middle_name"
+        required: false
+      
+      - source: "ДатаРождения"
+        target: "birth_date"
+        required: true
+        transform: "parse_date"
+      
+      - source: "ИНН"
+        target: "inn"
+        required: true
+      
+      - source: "СНИЛС"
+        target: "snils"
+        required: true
+      
+      - source: "Телефон"
+        target: "phone"
+        required: false
+      
+      - source: "Email"
+        target: "email"
+        required: false
+      
+      - source: "ДатаПриема"
+        target: "hire_date"
+        required: true
+        transform: "parse_date"
+      
+      - source: "Должность"
+        target: "position"
+        required: false
+        lookup: "positions"
+      
+      - source: "Отдел"
+        target: "department"
+        required: false
+        lookup: "departments"
+      
+      - source: "Оклад"
+        target: "salary_amount"
+        required: true
+        transform: "parse_decimal"
+      
+      - source: "ТипЗанятости"
+        target: "employment_type"
+        required: false
+        transform: "map_employment_type"
+        rules:
+          "Полная занятость": "full_time"
+          "Частичная занятость": "part_time"
+          "Удаленная работа": "remote"
+
+  # ============================================
+  # КОНТРАГЕНТЫ
+  # ============================================
+  counterparties:
+    source: "Контрагенты"
+    target: "counterparty"
+    fields:
+      - source: "Наименование"
+        target: "name"
+        required: true
+      
+      - source: "ИНН"
+        target: "inn"
+        required: true
+      
+      - source: "КПП"
+        target: "kpp"
+        required: false
+      
+      - source: "ЮрАдрес"
+        target: "legal_address"
+        required: false
+      
+      - source: "Телефон"
+        target: "phone"
+        required: false
+      
+      - source: "Email"
+        target: "email"
+        required: false
+      
+      - source: "Тип"
+        target: "type"
+        required: true
+        transform: "map_counterparty_type"
+        rules:
+          "Покупатель": "customer"
+          "Поставщик": "supplier"
+          "Покупатель и Поставщик": "both"
+
+  # ============================================
+  # НОМЕНКЛАТУРА
+  # ============================================
+  nomenclature:
+    source: "Номенклатура"
+    target: "nomenclature"
+    fields:
+      - source: "Артикул"
+        target: "sku"
+        required: true
+      
+      - source: "Наименование"
+        target: "name"
+        required: true
+      
+      - source: "Описание"
+        target: "description"
+        required: false
+      
+      - source: "Группа"
+        target: "category"
+        required: false
+      
+      - source: "ЕдиницаИзмерения"
+        target: "measurement_unit"
+        required: true
+        transform: "map_measurement_unit"
+        rules:
+          "шт": "шт"
+          "кг": "кг"
+          "л": "л"
+          "м": "м"
+      
+      - source: "ЦенаПродажи"
+        target: "price"
+        required: false
+        transform: "parse_decimal"
+      
+      - source: "ЦенаЗакупки"
+        target: "purchase_price"
+        required: false
+        transform: "parse_decimal"
+      
+      - source: "СтавкаНДС"
+        target: "vat_rate"
+        required: false
+        transform: "parse_percent"
+      
+      - source: "Услуга"
+        target: "is_service"
+        required: false
+        transform: "to_boolean"
+
+  # ============================================
+  # ДОКУМЕНТЫ
+  # ============================================
+  documents:
+    source: "РеализацияТоваровУслуг"
+    target: "documents"
+    type: "SalesInvoice"
+    fields:
+      - source: "Номер"
+        target: "number"
+        required: true
+      
+      - source: "Дата"
+        target: "date"
+        required: true
+        transform: "parse_date"
+      
+      - source: "Контрагент"
+        target: "counterparty_id"
+        required: true
+        lookup: "counterparty"
+        lookup_by: "inn"
+      
+      - source: "СуммаДокумента"
+        target: "total_amount"
+        required: true
+        transform: "parse_decimal"
+      
+      - source: "Статус"
+        target: "status"
+        required: true
+        transform: "map_document_status"
+        rules:
+          "Проведен": "posted"
+          "Черновик": "draft"
+          "Отменен": "cancelled"
+      
+      - source: "СуммаНДС"
+        target: "vat_total"
+        required: false
+        transform: "parse_decimal"
+      
+      - source: "Оплачен"
+        target: "payment_status"
+        required: false
+        transform: "map_payment_status"
+        rules:
+          "Да": "paid"
+          "Нет": "unpaid"
+
+  # ============================================
+  # ПРОВОДКИ
+  # ============================================
+  ledger:
+    source: "Проводки"
+    target: "ledger_entries"
+    fields:
+      - source: "Дата"
+        target: "posting_date"
+        required: true
+        transform: "parse_date"
+      
+      - source: "Документ"
+        target: "document_id"
+        required: true
+        lookup: "documents"
+        lookup_by: "number"
+      
+      - source: "СчетДебет"
+        target: "account_debit"
+        required: true
+      
+      - source: "СчетКредит"
+        target: "account_credit"
+        required: true
+      
+      - source: "Сумма"
+        target: "amount"
+        required: true
+        transform: "parse_decimal"
+      
+      - source: "Субконто"
+        target: "dimension_1"
+        required: false
+
+# ============================================
+# ПРОВЕРКИ
+# ============================================
+validations:
+  - name: "check_required_fields"
+    description: "Проверка обязательных полей"
+    rules:
+      - field: "legal_entities.inn"
+        condition: "not null and length == 12 or length == 10"
+        message: "Невалидный ИНН"
+      
+      - field: "employees.inn"
+        condition: "not null and length == 12"
+        message: "Невалидный ИНН сотрудника"
+      
+      - field: "counterparty.inn"
+        condition: "not null and length == 12 or length == 10"
+        message: "Невалидный ИНН контрагента"
+
+  - name: "check_duplicates"
+    description: "Проверка дубликатов"
+    rules:
+      - field: "legal_entities.inn"
+        message: "Найден дубликат ИНН"
+      
+      - field: "employees.employee_number"
+        message: "Найден дубликат табельного номера"

@@ -1,0 +1,90 @@
+# ============================================
+# Модель: Прогнозирование
+# ============================================
+name: "forecast"
+type: ai_model
+version: "1.0.0"
+description: "Модели предиктивной аналитики"
+
+forecast_types:
+  - name: "demand_forecast"
+    description: "Прогноз спроса на товары"
+    horizons: [7, 14, 30, 90]  # дни
+    features:
+      - "historical_sales"
+      - "seasonality"
+      - "trend"
+      - "promotions"
+      - "competitor_prices"
+    model:
+      algorithm: "prophet"  
+      accuracy: 0.85
+
+  - name: "cash_flow_forecast"
+    description: "Прогноз денежных потоков"
+    horizons: [7, 30, 90]  # дни
+    features:
+      - "historical_cash_flow"
+      - "receivables"
+      - "payables"
+      - "planned_payments"
+    model:
+      algorithm: "prophet"
+      accuracy: 0.82
+
+  - name: "churn_prediction"
+    description: "Прогноз оттока клиентов"
+    horizons: [30, 60, 90]  # дни
+    features:
+      - "engagement_metrics"
+      - "usage_frequency"
+      - "support_tickets"
+      - "payment_history"
+    model:
+      algorithm: "xgboost"
+      accuracy: 0.78
+
+  - name: "margin_prediction"
+    description: "Прогноз маржинальности"
+    horizons: [30, 90, 365]  # дни
+    features:
+      - "historical_margins"
+      - "cost_trends"
+      - "price_changes"
+      - "competition"
+    model:
+      algorithm: "xgboost"
+      accuracy: 0.83
+
+  - name: "tax_forecast"
+    description: "Прогноз налоговых обязательств"
+    horizons: [30, 90]  # дни
+    features:
+      - "historical_taxes"
+      - "revenue_forecast"
+      - "expense_forecast"
+      - "tax_changes"
+    model:
+      algorithm: "prophet"
+      accuracy: 0.88
+
+algorithms:
+  - name: "prophet"
+    description: "Facebook Prophet для временных рядов"
+    parameters:
+      changepoint_prior_scale: 0.05
+      seasonality_prior_scale: 10.0
+
+  - name: "xgboost"
+    description: "XGBoost для классификации и регрессии"
+    parameters:
+      n_estimators: 100
+      max_depth: 6
+      learning_rate: 0.1
+
+training:
+  schedule: "weekly"
+  retraining_threshold: 0.05
+
+limits:
+  max_forecast_per_day: 100

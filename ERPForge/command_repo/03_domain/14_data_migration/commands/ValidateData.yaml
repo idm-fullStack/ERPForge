@@ -1,0 +1,103 @@
+# ============================================
+# Команда: Валидация данных после миграции
+# ============================================
+name: "ValidateData"
+description: "Валидация импортированных данных"
+version: "1.0.0"
+
+inputs:
+  - migration_id:
+      type: uuid
+      required: true
+      description: "ID миграции"
+
+  - tenant_id:
+      type: uuid
+      required: true
+
+  - enterprise_id:
+      type: uuid
+      required: true
+
+  - validation_type:
+      type: string
+      enum: ["full", "quick", "custom"]
+      default: "full"
+
+  - rules:
+      type: array
+      nullable: true
+      description: "Пользовательские правила валидации"
+
+pre_conditions:
+  - "Миграция завершена"
+  - "Данные существуют"
+
+post_conditions:
+  - "Создан отчет о валидации"
+
+process:
+  steps:
+    - name: "CheckMissingFields"
+      action: |
+        SELECT * FROM {table} 
+        WHERE required_field IS NULL
+
+    - name: "CheckDuplicates"
+      action: |
+        SELECT inn, COUNT(*) FROM legal_entities 
+        GROUP BY inn HAVING COUNT(*) > 1
+
+    - name: "CheckForeignKeys"
+      action: |
+        SELECT * FROM documents 
+        WHERE counterparty_id NOT IN (SELECT id FROM counterparty)
+
+    - name: "CheckDataQuality"
+      action: |
+        - Проверить форматы дат
+        - Проверить ИНН (контрольные суммы)
+        - Проверить телефонные номера
+        - Проверить email
+
+    - name: "CheckBusinessLogic"
+      action: |
+        - Суммы документов = сумме позиций
+        - Сальдо проводок = 0
+
+    - name: "GenerateReport"
+      action: "Создать отчет о валидации"
+
+outputs:
+  - status:
+      type: string
+      enum: ["passed", "warning", "failed"]
+
+  - summary:
+      type: object
+      properties:
+        total_records: { type: integer }
+        invalid_records: { type: integer }
+        warning_records: { type: integer }
+        passed_records: { type: integer }
+
+  - details:
+      type: array
+      items:
+        type: object
+        properties:
+          entity: { type: string }
+          record_id: { type: string }
+          field: { type: string }
+          error: { type: string }
+          severity: { type: string, enum: ["error", "warning"] }
+
+  - report_url:
+      type: string
+
+example:
+  inputs:
+    migration_id: "z10e8400-e29b-41d4-a716-446655440000"
+    tenant_id: "660e8400-e29b-41d4-a716-446655440000"
+    enterprise_id: "aa0e8400-e29b-41d4-a716-446655440000"
+    validation_type: "full"

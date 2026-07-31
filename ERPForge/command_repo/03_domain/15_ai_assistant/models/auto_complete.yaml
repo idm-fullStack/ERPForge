@@ -1,0 +1,84 @@
+# ============================================
+# Модель: Автозаполнение
+# ============================================
+name: "auto_complete"
+type: ai_model
+version: "1.0.0"
+description: "Модель для автозаполнения полей"
+
+model:
+  provider: "custom"  
+  model_name: "erpforge-auto-complete-v1"
+  confidence_threshold: 0.7
+  max_suggestions: 5
+
+scenarios:
+  - name: "counterparty_by_inn"
+    description: "Поиск контрагента по ИНН"
+    input_fields: ["inn"]
+    output_fields: ["name", "kpp", "legal_address", "phone"]
+    source: "counterparty"
+    min_confidence: 0.8
+
+  - name: "nomenclature_by_sku"
+    description: "Поиск товара по артикулу"
+    input_fields: ["sku"]
+    output_fields: ["name", "price", "vat_rate", "measurement_unit"]
+    source: "nomenclature"
+    min_confidence: 0.85
+
+  - name: "posting_by_document"
+    description: "Подбор проводок по типу документа"
+    input_fields: ["document_type", "total_amount"]
+    output_fields: ["debit_account", "credit_account", "amount"]
+    source: "posting_rules"
+    min_confidence: 0.7
+
+  - name: "tax_by_enterprise"
+    description: "Подбор налоговой системы"
+    input_fields: ["enterprise_type", "revenue", "employees"]
+    output_fields: ["tax_system", "tax_rate"]
+    source: "tax_rules"
+    min_confidence: 0.65
+
+  - name: "account_by_type"
+    description: "Подбор счета по типу операции"
+    input_fields: ["operation_type", "amount"]
+    output_fields: ["account_debit", "account_credit"]
+    source: "chart_of_accounts"
+    min_confidence: 0.75
+
+  - name: "kdjr_auto_fill"
+    description: "Автозаполнение КДиР"
+    input_fields: ["document_type", "counterparty", "amount"]
+    output_fields: ["income", "expense", "vat"]
+    source: "kdjr_rules"
+    min_confidence: 0.8
+
+training:
+  data_source: "historical_transactions"
+  update_frequency: "daily"
+  min_samples: 1000
+
+quality_metrics:
+  accuracy: 0.89
+  precision: 0.92
+  recall: 0.85
+  updated_at: "2025-01-15T10:00:00Z"
+
+examples:
+  - scenario: "counterparty_by_inn"
+    input: { "inn": "123456789012" }
+    output:
+      - name: "ООО Ромашка"
+        confidence: 0.95
+      - name: "ООО Ромашка-плюс"
+        confidence: 0.12
+
+  - scenario: "posting_by_document"
+    input: { "document_type": "SalesInvoice", "total_amount": 159800 }
+    output:
+      - debit_account: "62.01"
+        credit_account: "90.01"
+        amount: 159800.00
+        confidence: 0.92

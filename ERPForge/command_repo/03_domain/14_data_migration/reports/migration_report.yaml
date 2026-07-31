@@ -1,0 +1,131 @@
+# ============================================
+# Отчет: Отчет о миграции
+# ============================================
+name: "MigrationReport"
+description: "Отчет о результате миграции данных"
+version: "1.0.0"
+
+sections:
+  - id: "header"
+    title: "Отчет о миграции данных"
+    fields:
+      - name: "Дата миграции"
+        source: "migration.completed_at"
+        format: "datetime"
+      
+      - name: "Статус"
+        source: "migration.status"
+      
+      - name: "Источник"
+        source: "migration.source_system"
+      
+      - name: "Целевая система"
+        source: "migration.target_system"
+
+  - id: "summary"
+    title: "Сводная информация"
+    type: "table"
+    columns:
+      - name: "Сущность"
+        field: "entity_type"
+      - name: "Импортировано"
+        field: "imported"
+        type: "integer"
+      - name: "Пропущено"
+        field: "skipped"
+        type: "integer"
+      - name: "С ошибками"
+        field: "errors"
+        type: "integer"
+      - name: "Статус"
+        field: "status"
+        type: "status"
+
+  - id: "errors"
+    title: "Ошибки импорта"
+    type: "table"
+    visible: "has_errors"
+    columns:
+      - name: "ID"
+        field: "record_id"
+      - name: "Сущность"
+        field: "entity_type"
+      - name: "Поле"
+        field: "field"
+      - name: "Ошибка"
+        field: "error"
+      - name: "Критичность"
+        field: "severity"
+        type: "severity"
+
+  - id: "validation"
+    title: "Результаты валидации"
+    visible: "validation_run"
+    fields:
+      - name: "Всего записей"
+        source: "validation.total_records"
+      - name: "Прошли проверку"
+        source: "validation.passed_records"
+      - name: "Предупреждения"
+        source: "validation.warning_records"
+      - name: "Ошибки"
+        source: "validation.invalid_records"
+        type: "severity"
+
+  - id: "recommendations"
+    title: "Рекомендации"
+    type: "list"
+    source: "recommendations"
+
+example:
+  migration:
+    id: "z10e8400-e29b-41d4-a716-446655440000"
+    source_system: "1С:Бухгалтерия 8.3"
+    target_system: "ERPForge 1.0.0"
+    status: "partial"
+    completed_at: "2025-01-15T16:30:00Z"
+  
+  entities:
+    - entity_type: "legal_entities"
+      imported: 5
+      skipped: 0
+      errors: 0
+      status: "success"
+    - entity_type: "counterparties"
+      imported: 120
+      skipped: 3
+      errors: 2
+      status: "warning"
+    - entity_type: "nomenclature"
+      imported: 450
+      skipped: 0
+      errors: 0
+      status: "success"
+    - entity_type: "documents"
+      imported: 850
+      skipped: 12
+      errors: 5
+      status: "warning"
+  
+  errors:
+    - record_id: "CC-12345"
+      entity_type: "counterparty"
+      field: "inn"
+      error: "Невалидный ИНН (не совпадает контрольная сумма)"
+      severity: "error"
+    - record_id: "DOC-2025-001"
+      entity_type: "document"
+      field: "counterparty_id"
+      error: "Контрагент не найден"
+      severity: "error"
+  
+  validation:
+    total_records: 1425
+    passed_records: 1410
+    warning_records: 10
+    invalid_records: 5
+  
+  recommendations:
+    - "Исправьте 5 ошибок в документах (не найденные контрагенты)"
+    - "Проверьте 3 дубликата контрагентов"
+    - "Запустите повторный импорт для неудачных записей"

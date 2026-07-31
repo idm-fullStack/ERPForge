@@ -1,0 +1,206 @@
+# ============================================
+# Маппинг: SAP → ERPForge
+# ============================================
+version: "1.0.0"
+type: mapping
+name: "sap_entities"
+description: "Маппинг сущностей из SAP в ERPForge"
+
+source_system:
+  name: "SAP ERP"
+  version: "ECC 6.0"
+  format: "csv"
+
+target_system:
+  name: "ERPForge"
+  version: "1.0.0"
+
+mappings:
+  # ============================================
+  # КЛИЕНТЫ (SAP BPartner → ERPForge Counterparty)
+  # ============================================
+  customers:
+    source: "BPartner"
+    target: "counterparty"
+    fields:
+      - source: "CustomerID"
+        target: "id"
+        required: true
+      
+      - source: "CompanyName"
+        target: "name"
+        required: true
+      
+      - source: "TaxNumber"
+        target: "inn"
+        required: true
+      
+      - source: "VATRegistration"
+        target: "kpp"
+        required: false
+      
+      - source: "Address"
+        target: "legal_address"
+        required: false
+      
+      - source: "Phone"
+        target: "phone"
+        required: false
+      
+      - source: "Email"
+        target: "email"
+        required: false
+      
+      - source: "CustomerType"
+        target: "type"
+        required: true
+        transform: "map_sap_customer_type"
+        rules:
+          "Domestic": "customer"
+          "International": "customer"
+
+  # ============================================
+  # ТОВАРЫ (SAP Material → ERPForge Nomenclature)
+  # ============================================
+  materials:
+    source: "Material"
+    target: "nomenclature"
+    fields:
+      - source: "MaterialNumber"
+        target: "sku"
+        required: true
+      
+      - source: "Description"
+        target: "name"
+        required: true
+      
+      - source: "MaterialGroup"
+        target: "category"
+        required: false
+      
+      - source: "UnitOfMeasure"
+        target: "measurement_unit"
+        required: true
+      
+      - source: "Price"
+        target: "price"
+        required: false
+        transform: "parse_decimal"
+      
+      - source: "TaxCode"
+        target: "vat_rate"
+        required: false
+        transform: "map_sap_tax"
+      
+      - source: "MaterialType"
+        target: "type"
+        required: true
+        transform: "map_sap_material_type"
+        rules:
+          "FERT": "product"
+          "HALB": "product"
+          "ROH": "product"
+          "DIEN": "service"
+
+  # ============================================
+  # ДОКУМЕНТЫ (SAP SalesOrder → ERPForge Document)
+  # ============================================
+  sales_orders:
+    source: "SalesOrder"
+    target: "documents"
+    type: "SalesInvoice"
+    fields:
+      - source: "OrderNumber"
+        target: "number"
+        required: true
+      
+      - source: "OrderDate"
+        target: "date"
+        required: true
+        transform: "parse_date"
+      
+      - source: "CustomerID"
+        target: "counterparty_id"
+        required: true
+        lookup: "customers"
+        lookup_by: "CustomerID"
+      
+      - source: "TotalAmount"
+        target: "total_amount"
+        required: true
+        transform: "parse_decimal"
+      
+      - source: "OrderStatus"
+        target: "status"
+        required: true
+        transform: "map_sap_order_status"
+        rules:
+          "Completed": "posted"
+          "Created": "draft"
+          "Cancelled": "cancelled"
+
+  # ============================================
+  # СОТРУДНИКИ (SAP HCM → ERPForge Employee)
+  # ============================================
+  employees:
+    source: "Employee"
+    target: "employees"
+    fields:
+      - source: "PersonnelNumber"
+        target: "employee_number"
+        required: true
+      
+      - source: "LastName"
+        target: "last_name"
+        required: true
+      
+      - source: "FirstName"
+        target: "first_name"
+        required: true
+      
+      - source: "MiddleName"
+        target: "middle_name"
+        required: false
+      
+      - source: "BirthDate"
+        target: "birth_date"
+        required: true
+        transform: "parse_date"
+      
+      - source: "TaxID"
+        target: "inn"
+        required: true
+      
+      - source: "HireDate"
+        target: "hire_date"
+        required: true
+        transform: "parse_date"
+      
+      - source: "Position"
+        target: "position"
+        required: false
+      
+      - source: "Department"
+        target: "department"
+        required: false
+      
+      - source: "Salary"
+        target: "salary_amount"
+        required: true
+        transform: "parse_decimal"
+
+# ============================================
+# ПРОВЕРКИ
+# ============================================
+validations:
+  - name: "check_customer_inn"
+    rules:
+      - field: "customers.inn"
+        condition: "not null"
+        message: "У клиента нет ИНН"
+  
+  - name: "check_material_price"
+    rules:
+      - field: "materials.price"
+        condition: ">= 0"
+        message: "Цена не может быть отрицательной"
