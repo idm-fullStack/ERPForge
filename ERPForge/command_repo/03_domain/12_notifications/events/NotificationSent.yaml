@@ -1,0 +1,69 @@
+# ============================================
+# Событие: Уведомление отправлено
+# ============================================
+name: "NotificationSent"
+description: "Уведомление успешно отправлено"
+version: "1.0.0"
+
+fields:
+  - event_id:
+      type: uuid
+      required: true
+
+  - notification_id:
+      type: uuid
+      required: true
+
+  - tenant_id:
+      type: uuid
+      required: true
+
+  - recipient_id:
+      type: uuid
+      required: true
+
+  - template_code:
+      type: string
+      required: true
+
+  - channels:
+      type: array
+      required: true
+      description: "Каналы доставки"
+
+  - priority:
+      type: string
+      required: true
+
+  - sent_at:
+      type: datetime
+      required: true
+
+  - delivery_status:
+      type: object
+      description: "Статус доставки по каналам"
+      properties:
+        email: { type: string, enum: ["sent", "failed"] }
+        sms: { type: string, enum: ["sent", "failed"] }
+        telegram: { type: string, enum: ["sent", "failed"] }
+        websocket: { type: string, enum: ["sent", "failed"] }
+        in_app: { type: string, enum: ["sent", "failed"] }
+
+reactions:
+  - "Запись в лог уведомлений"
+  - "Обновить статистику отправок"
+  - "Если critical → подтверждение доставки"
+
+example:
+  event_id: "v10e8400-e29b-41d4-a716-446655440000"
+  notification_id: "v11e8400-e29b-41d4-a716-446655440000"
+  tenant_id: "660e8400-e29b-41d4-a716-446655440000"
+  recipient_id: "550e8400-e29b-41d4-a716-446655440001"
+  template_code: "DOCUMENT_POSTED"
+  channels: ["email", "telegram", "in_app"]
+  priority: "high"
+  sent_at: "2025-01-15T14:30:00Z"
+  delivery_status:
+    email: "sent"
+    telegram: "sent"
+    in_app: "sent"

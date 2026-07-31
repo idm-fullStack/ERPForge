@@ -1,0 +1,48 @@
+# ============================================
+# Настройки: SMS канал уведомлений
+# ============================================
+name: "sms"
+type: channel
+version: "1.0.0"
+description: "Настройки SMS уведомлений"
+
+provider:
+  name: "twilio"  
+  account_sid: "{TWILIO_ACCOUNT_SID}"
+  auth_token: "{TWILIO_AUTH_TOKEN}"
+  from: "{TWILIO_PHONE}"
+
+
+alternatives:
+  - provider: "sber"
+    api_url: "https://api.sberbank.ru/sms"
+    client_id: "{SBER_SMS_CLIENT_ID}"
+    client_secret: "{SBER_SMS_CLIENT_SECRET}"
+  - provider: "beeline"
+    api_url: "https://api.beeline.ru/sms"
+    api_key: "{BEELINE_API_KEY}"
+
+# Настройки
+options:
+  max_length: 160
+  encoding: "utf-8"
+  validity_period: 3600
+  status_callback: "https://erpforge.com/sms/status"
+
+# Приоритеты
+priority:
+  critical:
+    max_retries: 5
+    retry_delay: 60
+  high:
+    max_retries: 3
+    retry_delay: 120
+  medium:
+    max_retries: 2
+    retry_delay: 300
+
+# Обработка ошибок
+error_handling:
+  retry_on: ["timeout", "network_error", "rate_limit"]
+  max_retries: 3
+  retry_delay: 60

@@ -1,0 +1,41 @@
+# ============================================
+# Настройки: WebSocket канал уведомлений
+# ============================================
+name: "websocket"
+type: channel
+version: "1.0.0"
+description: "Настройки WebSocket уведомлений"
+
+server:
+  host: "0.0.0.0"
+  port: 8080
+  path: "/ws"
+  ping_interval: 30
+  ping_timeout: 10
+
+security:
+  auth_required: true
+  token_header: "Authorization"
+  token_prefix: "Bearer"
+
+options:
+  max_message_size: 1048576
+  max_connections: 10000
+  compress: true
+
+events:
+  - "document.posted"
+  - "payment.received"
+  - "deal.won"
+  - "notification"
+
+message_format:
+  type: "json"
+  schema:
+    event: { type: "string" }
+    data: { type: "object" }
+    timestamp: { type: "string" }
+
+monitoring:
+  metrics_enabled: true
+  health_check: "/health"

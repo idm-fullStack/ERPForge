@@ -1,0 +1,128 @@
+# ============================================
+# Команда: Отправить уведомление
+# ============================================
+name: "SendNotification"
+description: "Отправка уведомления через все настроенные каналы"
+version: "1.0.0"
+
+inputs:
+  - template_code:
+      type: string
+      required: true
+      description: "Код шаблона уведомления"
+
+  - recipient_id:
+      type: uuid
+      required: true
+      description: "ID получателя (пользователя)"
+
+  - tenant_id:
+      type: uuid
+      required: true
+      description: "ID клиента"
+
+  - variables:
+      type: object
+      required: true
+      description: "Переменные для шаблона"
+      example: |
+        document:
+          number: "СЧ-2025-001"
+          total: 159800.00
+
+  - channels_override:
+      type: array
+      nullable: true
+      description: "Переопределить каналы"
+      items:
+        type: string
+        enum: ["email", "sms", "telegram", "websocket", "in_app"]
+
+  - priority:
+      type: string
+      enum: ["low", "medium", "high", "critical"]
+      default: "medium"
+
+pre_conditions:
+  - "Шаблон существует и активен"
+  - "Пользователь существует"
+  - "У пользователя есть настройки уведомлений"
+
+post_conditions:
+  - "Уведомление отправлено"
+  - "Запись в лог уведомлений"
+
+process:
+  steps:
+    - name: "GetTemplate"
+      action: "SELECT * FROM notification_templates WHERE code = '{template_code}'"
+
+    - name: "GetUserPreferences"
+      action: "SELECT * FROM notification_preferences WHERE user_id = '{recipient_id}'"
+
+    - name: "DetermineChannels"
+      action: |
+        IF channels_override IS NOT NULL:
+          channels = channels_override
+        ELSE:
+          channels = template.channels ∩ user_preferences.enabled_channels
+
+    - name: "RenderContent"
+      action: "Подставить переменные в шаблоны"
+
+    - name: "SendToChannels"
+      action: |
+        FOR each channel in channels:
+          IF channel == 'email':
+            SendEmail()
+          IF channel == 'sms':
+            SendSMS()
+          IF channel == 'telegram':
+            SendTelegram()
+          IF channel == 'websocket':
+            SendWebSocket()
+          IF channel == 'in_app':
+            SendInApp()
+
+    - name: "LogNotification"
+      action: "INSERT INTO notification_log"
+
+outputs:
+  - status:
+      type: string
+      enum: ["success", "partial", "failed"]
+
+  - sent_channels:
+      type: array
+      description: "Каналы, по которым отправлено"
+
+  - failed_channels:
+      type: array
+      description: "Каналы, по которым не отправлено"
+
+  - errors:
+      type: array
+      nullable: true
+
+events:
+  on_success:
+    - NotificationSent.yaml
+  on_failure:
+    - NotificationFailed.yaml
+
+example:
+  inputs:
+    template_code: "DOCUMENT_POSTED"
+    recipient_id: "550e8400-e29b-41d4-a716-446655440001"
+    tenant_id: "660e8400-e29b-41d4-a716-446655440000"
+    variables:
+      document:
+        id: "123"
+        number: "СЧ-2025-001"
+        date: "2025-01-15"
+        total: "159800.00"
+        currency: "RUB"
+      counterparty:
+        name: "ООО Ромашка"
+      link: "https://erpforge.com/documents/123"
+    priority: "high"

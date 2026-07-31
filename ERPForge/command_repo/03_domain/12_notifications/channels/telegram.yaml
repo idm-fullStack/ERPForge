@@ -1,0 +1,42 @@
+# ============================================
+# Настройки: Telegram канал уведомлений
+# ============================================
+name: "telegram"
+type: channel
+version: "1.0.0"
+description: "Настройки Telegram уведомлений"
+
+bot:
+  token: "{TELEGRAM_BOT_TOKEN}"
+  name: "ERPForge_Bot"
+  webhook: "https://erpforge.com/telegram/webhook"
+
+options:
+  parse_mode: "Markdown"
+  disable_notification: false
+  disable_web_page_preview: false
+
+markdown:
+  bold: "*текст*"
+  italic: "_текст_"
+  underline: "__текст__"
+  strikethrough: "~текст~"
+  code: "`код`"
+  pre: "```код```"
+  link: "[текст](url)"
+
+# Клавиатура
+keyboard:
+  inline:
+    - [" Подтвердить", " Отклонить"]
+    - [" Открыть документ", " Отчет"]
+
+limits:
+  max_message_length: 4096
+  max_caption_length: 1024
+  rate_limit: 30  
+
+error_handling:
+  retry_on: ["timeout", "rate_limit"]
+  max_retries: 3
+  retry_delay: 30

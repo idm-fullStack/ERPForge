@@ -1,0 +1,158 @@
+# ============================================
+# Справочник: Настройки уведомлений пользователей
+# ============================================
+version: "1.0.0"
+type: registry
+name: "notification_preferences"
+description: "Настройки уведомлений пользователей"
+
+fields:
+  - id:
+      type: uuid
+      primary: true
+
+  - user_id:
+      type: uuid
+      required: true
+      indexed: true
+      unique: true
+      description: "ID пользователя"
+
+  - tenant_id:
+      type: uuid
+      required: true
+      indexed: true
+
+  - channels:
+      type: object
+      required: true
+      description: "Настройки каналов"
+      properties:
+        email:
+          type: object
+          properties:
+            enabled: { type: boolean, default: true }
+            address: { type: string, format: email }
+        sms:
+          type: object
+          properties:
+            enabled: { type: boolean, default: false }
+            phone: { type: string }
+        telegram:
+          type: object
+          properties:
+            enabled: { type: boolean, default: false }
+            chat_id: { type: string }
+        websocket:
+          type: object
+          properties:
+            enabled: { type: boolean, default: true }
+        in_app:
+          type: object
+          properties:
+            enabled: { type: boolean, default: true }
+
+  - categories:
+      type: object
+      description: "Настройки по категориям"
+      properties:
+        document:
+          type: object
+          properties:
+            enabled: { type: boolean, default: true }
+            channels: { type: array, items: { type: string } }
+        payment:
+          type: object
+          properties:
+            enabled: { type: boolean, default: true }
+            channels: { type: array, items: { type: string } }
+        tax:
+          type: object
+          properties:
+            enabled: { type: boolean, default: true }
+            channels: { type: array, items: { type: string } }
+        crm:
+          type: object
+          properties:
+            enabled: { type: boolean, default: true }
+            channels: { type: array, items: { type: string } }
+        hrm:
+          type: object
+          properties:
+            enabled: { type: boolean, default: true }
+            channels: { type: array, items: { type: string } }
+        security:
+          type: object
+          properties:
+            enabled: { type: boolean, default: true }
+            channels: { type: array, items: { type: string } }
+        system:
+          type: object
+          properties:
+            enabled: { type: boolean, default: true }
+            channels: { type: array, items: { type: string } }
+
+  - quiet_hours:
+      type: object
+      description: "Часы тишины"
+      properties:
+        enabled: { type: boolean, default: false }
+        start: { type: string, pattern: "^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$" }
+        end: { type: string, pattern: "^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$" }
+        timezone: { type: string, default: "Europe/Moscow" }
+
+  - digest:
+      type: object
+      description: "Настройки дайджеста"
+      properties:
+        enabled: { type: boolean, default: false }
+        frequency: { type: string, enum: ["daily", "weekly"], default: "daily" }
+        time: { type: string, pattern: "^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$" }
+
+  - updated_at:
+      type: datetime
+      default: "now()"
+
+examples:
+  - id: "u11e8400-e29b-41d4-a716-446655440000"
+    user_id: "550e8400-e29b-41d4-a716-446655440001"
+    tenant_id: "660e8400-e29b-41d4-a716-446655440000"
+    channels:
+      email:
+        enabled: true
+        address: "ivan@company.ru"
+      sms:
+        enabled: true
+        phone: "+79001234567"
+      telegram:
+        enabled: true
+        chat_id: "123456789"
+      websocket:
+        enabled: true
+      in_app:
+        enabled: true
+    categories:
+      document:
+        enabled: true
+        channels: ["email", "telegram", "websocket", "in_app"]
+      payment:
+        enabled: true
+        channels: ["email", "sms", "telegram"]
+      tax:
+        enabled: true
+        channels: ["email", "sms"]
+      crm:
+        enabled: true
+        channels: ["email", "telegram"]
+      security:
+        enabled: true
+        channels: ["email"]
+    quiet_hours:
+      enabled: true
+      start: "22:00"
+      end: "08:00"
+      timezone: "Europe/Moscow"
+    digest:
+      enabled: true
+      frequency: "daily"
+      time: "09:00"

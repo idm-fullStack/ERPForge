@@ -1,0 +1,338 @@
+# ============================================
+# Справочник: Шаблоны уведомлений
+# ============================================
+version: "1.0.0"
+type: registry
+name: "notification_templates"
+description: "Справочник шаблонов уведомлений для всех каналов"
+
+fields:
+  - id:
+      type: uuid
+      primary: true
+
+  - code:
+      type: string
+      required: true
+      unique: true
+      indexed: true
+      max_length: 50
+      description: "Кодовое имя шаблона"
+      example: "DOCUMENT_POSTED"
+
+  - name:
+      type: string
+      required: true
+      max_length: 200
+      description: "Название шаблона"
+      example: "Документ проведен"
+
+  - description:
+      type: string
+      max_length: 500
+      description: "Описание шаблона"
+
+  - category:
+      type: string
+      required: true
+      indexed: true
+      enum: ["document", "payment", "tax", "crm", "hrm", "security", "system"]
+      description: "Категория уведомления"
+      example: "document"
+
+  - channels:
+      type: array
+      required: true
+      description: "Доступные каналы для шаблона"
+      items:
+        type: string
+        enum: ["email", "sms", "telegram", "websocket", "in_app"]
+
+  - subject_template:
+      type: string
+      description: "Шаблон темы (для email)"
+      example: "Документ {{document.number}} проведен"
+
+  - body_template:
+      type: object
+      required: true
+      description: "Шаблоны тела для разных каналов"
+      properties:
+        email:
+          type: string
+          description: "HTML шаблон для email"
+        sms:
+          type: string
+          description: "Текст для SMS (макс 160 символов)"
+        telegram:
+          type: string
+          description: "Текст для Telegram (Markdown)"
+        websocket:
+          type: object
+          description: "JSON структура для WebSocket"
+        in_app:
+          type: string
+          description: "Текст для in-app уведомления"
+
+  - variables:
+      type: array
+      description: "Доступные переменные для шаблона"
+      items:
+        type: object
+        properties:
+          name: { type: string }
+          description: { type: string }
+          example: { type: string }
+
+  - priority:
+      type: string
+      enum: ["low", "medium", "high", "critical"]
+      default: "medium"
+      description: "Приоритет уведомления"
+
+  - is_system:
+      type: boolean
+      default: false
+      description: "Системный шаблон (нельзя удалить)"
+
+  - is_active:
+      type: boolean
+      default: true
+
+  - created_at:
+      type: datetime
+      default: "now()"
+
+  - updated_at:
+      type: datetime
+      default: "now()"
+
+examples:
+  - id: "u10e8400-e29b-41d4-a716-446655440000"
+    code: "DOCUMENT_POSTED"
+    name: "Документ проведен"
+    description: "Уведомление о проведении документа"
+    category: "document"
+    channels: ["email", "telegram", "websocket", "in_app"]
+    subject_template: "Документ {{document.number}} проведен"
+    body_template:
+      email: |
+        <h2>Документ проведен</h2>
+        <p>Документ <strong>{{document.number}}</strong> от {{document.date}} успешно проведен.</p>
+        <p>Сумма: {{document.total}} {{document.currency}}</p>
+        <p>Контрагент: {{counterparty.name}}</p>
+        <p><a href="{{link}}">Открыть документ</a></p>
+      sms: "Документ {{document.number}} проведен на {{document.total}} руб"
+      telegram: |
+        *Документ проведен*
+        Номер: {{document.number}}
+        Дата: {{document.date}}
+        Сумма: {{document.total}} {{document.currency}}
+        Контрагент: {{counterparty.name}}
+        [Открыть]({{link}})
+      websocket:
+        type: "document_posted"
+        data:
+          document_id: "{{document.id}}"
+          number: "{{document.number}}"
+          total: "{{document.total}}"
+      in_app: "Документ {{document.number}} проведен"
+    variables:
+      - name: "document.number"
+        description: "Номер документа"
+        example: "СЧ-2025-001"
+      - name: "document.date"
+        description: "Дата документа"
+        example: "2025-01-15"
+      - name: "document.total"
+        description: "Сумма документа"
+        example: "159800.00"
+      - name: "counterparty.name"
+        description: "Наименование контрагента"
+        example: "ООО Ромашка"
+      - name: "link"
+        description: "Ссылка на документ"
+        example: "https://erpforge.com/documents/123"
+    priority: "high"
+    is_system: true
+    is_active: true
+
+  - id: "u10e8400-e29b-41d4-a716-446655440001"
+    code: "PAYMENT_RECEIVED"
+    name: "Поступление платежа"
+    description: "Уведомление о поступлении платежа"
+    category: "payment"
+    channels: ["email", "telegram", "in_app"]
+    subject_template: "Поступление платежа {{payment.amount}} руб"
+    body_template:
+      email: |
+        <h2>Поступление платежа</h2>
+        <p>Поступил платеж на сумму <strong>{{payment.amount}} {{payment.currency}}</strong></p>
+        <p>От: {{payment.counterparty}}</p>
+        <p>Назначение: {{payment.purpose}}</p>
+      telegram: |
+        * Поступление платежа*
+        Сумма: {{payment.amount}} {{payment.currency}}
+        От: {{payment.counterparty}}
+        Назначение: {{payment.purpose}}
+      in_app: "Поступил платеж {{payment.amount}} руб от {{payment.counterparty}}"
+    variables:
+      - name: "payment.amount"
+        description: "Сумма платежа"
+        example: "159800.00"
+      - name: "payment.counterparty"
+        description: "Плательщик"
+        example: "ООО Ромашка"
+      - name: "payment.purpose"
+        description: "Назначение платежа"
+        example: "Оплата по договору №123"
+    priority: "high"
+    is_system: true
+    is_active: true
+
+  - id: "u10e8400-e29b-41d4-a716-446655440002"
+    code: "TAX_DUE"
+    name: "Приближается срок уплаты налога"
+    description: "Напоминание о приближении срока уплаты налога"
+    category: "tax"
+    channels: ["email", "sms", "telegram", "in_app"]
+    subject_template: " Срок уплаты налога {{tax.name}} - {{tax.due_date}}"
+    body_template:
+      email: |
+        <h2> Срок уплаты налога</h2>
+        <p>Налог: <strong>{{tax.name}}</strong></p>
+        <p>Сумма: {{tax.amount}} {{tax.currency}}</p>
+        <p>Срок уплаты: {{tax.due_date}}</p>
+        <p>Осталось дней: {{tax.days_until_due}}</p>
+        <p><a href="{{link}}">Оплатить</a></p>
+      sms: "Срок уплаты {{tax.name}} {{tax.due_date}}. Сумма: {{tax.amount}} руб"
+      telegram: |
+        * Срок уплаты налога*
+        Налог: {{tax.name}}
+        Сумма: {{tax.amount}} {{tax.currency}}
+        Срок: {{tax.due_date}}
+        Осталось дней: {{tax.days_until_due}}
+      in_app: "Срок уплаты {{tax.name}} - {{tax.due_date}}"
+    variables:
+      - name: "tax.name"
+        description: "Название налога"
+        example: "Налог при УСН"
+      - name: "tax.amount"
+        description: "Сумма налога"
+        example: "75000.00"
+      - name: "tax.due_date"
+        description: "Дата уплаты"
+        example: "2025-04-28"
+      - name: "tax.days_until_due"
+        description: "Дней до срока"
+        example: "5"
+    priority: "high"
+    is_system: true
+    is_active: true
+
+  - id: "u10e8400-e29b-41d4-a716-446655440003"
+    code: "LEAD_ASSIGNED"
+    name: "Лид назначен менеджеру"
+    description: "Уведомление о назначении лида"
+    category: "crm"
+    channels: ["email", "telegram", "in_app"]
+    subject_template: "Новый лид назначен вам"
+    body_template:
+      email: |
+        <h2>Новый лид</h2>
+        <p>Вам назначен новый лид:</p>
+        <p><strong>{{lead.first_name}} {{lead.last_name}}</strong></p>
+        <p>Компания: {{lead.company}}</p>
+        <p>Бюджет: {{lead.budget}} руб</p>
+        <p><a href="{{link}}">Перейти к лиду</a></p>
+      telegram: |
+        * Новый лид*
+        {{lead.first_name}} {{lead.last_name}}
+        Компания: {{lead.company}}
+        Бюджет: {{lead.budget}} руб
+      in_app: "Новый лид от {{lead.company}} назначен вам"
+    variables:
+      - name: "lead.first_name"
+        description: "Имя контакта"
+        example: "Иван"
+      - name: "lead.company"
+        description: "Название компании"
+        example: "ООО Ромашка"
+      - name: "lead.budget"
+        description: "Бюджет"
+        example: "1000000"
+    priority: "medium"
+    is_system: false
+    is_active: true
+
+  - id: "u10e8400-e29b-41d4-a716-446655440004"
+    code: "DEAL_WON"
+    name: "Сделка выиграна"
+    description: "Уведомление о выигранной сделке"
+    category: "crm"
+    channels: ["email", "telegram", "websocket", "in_app"]
+    subject_template: " Сделка {{deal.name}} выиграна!"
+    body_template:
+      email: |
+        <h2> Поздравляем!</h2>
+        <p>Сделка <strong>{{deal.name}}</strong> выиграна!</p>
+        <p>Сумма: {{deal.value}} {{deal.currency}}</p>
+        <p>Клиент: {{deal.customer}}</p>
+        <p>Менеджер: {{deal.manager}}</p>
+        <p><a href="{{link}}">Перейти к сделке</a></p>
+      telegram: |
+        * Сделка выиграна!*
+        {{deal.name}}
+        Сумма: {{deal.value}} {{deal.currency}}
+        Клиент: {{deal.customer}}
+        Менеджер: {{deal.manager}}
+      websocket:
+        type: "deal_won"
+        data:
+          deal_id: "{{deal.id}}"
+          name: "{{deal.name}}"
+          value: "{{deal.value}}"
+      in_app: " Сделка {{deal.name}} выиграна на {{deal.value}} руб"
+    variables:
+      - name: "deal.name"
+        description: "Название сделки"
+        example: "Внедрение ERP"
+      - name: "deal.value"
+        description: "Сумма сделки"
+        example: "1500000"
+      - name: "deal.customer"
+        description: "Клиент"
+        example: "ООО Ромашка"
+    priority: "high"
+    is_system: false
+    is_active: true
+
+  - id: "u10e8400-e29b-41d4-a716-446655440005"
+    code: "INTEGRATION_FAILED"
+    name: "Ошибка интеграции"
+    description: "Уведомление об ошибке интеграции"
+    category: "system"
+    channels: ["email", "telegram"]
+    subject_template: " Ошибка интеграции {{integration.name}}"
+    body_template:
+      email: |
+        <h2> Ошибка интеграции</h2>
+        <p>Интеграция: <strong>{{integration.name}}</strong></p>
+        <p>Ошибка: {{integration.error}}</p>
+        <p>Время: {{integration.time}}</p>
+        <p><a href="{{link}}">Перейти в лог ошибок</a></p>
+      telegram: |
+        * Ошибка интеграции*
+        {{integration.name}}
+        Ошибка: {{integration.error}}
+        Время: {{integration.time}}
+    variables:
+      - name: "integration.name"
+        description: "Название интеграции"
+        example: "СберБанк"
+      - name: "integration.error"
+        description: "Текст ошибки"
+        example: "Истек срок действия токена"
+    priority: "critical"
+    is_system: true
+    is_active: true
