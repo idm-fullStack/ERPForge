@@ -1,0 +1,97 @@
+# ============================================
+# Событие: Задача выполнена
+# ============================================
+name: "TaskCompleted"
+description: "Задача успешно выполнена (согласована или отклонена)"
+version: "1.0.0"
+
+fields:
+  - event_id:
+      type: uuid
+      required: true
+
+  - task_id:
+      type: uuid
+      required: true
+
+  - workflow_instance_id:
+      type: uuid
+      required: true
+
+  - workflow_code:
+      type: string
+      required: true
+
+  - entity_id:
+      type: uuid
+      required: true
+
+  - entity_type:
+      type: string
+      required: true
+
+  - action:
+      type: string
+      required: true
+      enum: ["approve", "reject"]
+
+  - status:
+      type: string
+      required: true
+      enum: ["completed", "rejected"]
+
+  - completed_by:
+      type: uuid
+      required: true
+
+  - comment:
+      type: string
+      nullable: true
+
+  - next_status:
+      type: string
+      nullable: true
+
+  - workflow_completed:
+      type: boolean
+      required: true
+
+  - completed_at:
+      type: datetime
+      required: true
+
+reactions:
+  - "Если workflow_completed == true → отправить уведомление о завершении"
+  - "Если есть следующая задача → отправить уведомление следующему исполнителю"
+  - "Обновить дашборд задач"
+  - "Запись в Audit Log"
+
+example_approve:
+  event_id: "y10e8400-e29b-41d4-a716-446655440000"
+  task_id: "w11e8400-e29b-41d4-a716-446655440000"
+  workflow_instance_id: "x11e8400-e29b-41d4-a716-446655440000"
+  workflow_code: "DOC_APPROVAL"
+  entity_id: "ee0e8400-e29b-41d4-a716-446655440000"
+  entity_type: "document"
+  action: "approve"
+  status: "completed"
+  completed_by: "550e8400-e29b-41d4-a716-446655440002"
+  comment: "Документ проверен, замечаний нет"
+  next_status: "pending_accountant"
+  workflow_completed: false
+  completed_at: "2025-01-16T10:00:00Z"
+
+example_reject:
+  event_id: "y10e8400-e29b-41d4-a716-446655440001"
+  task_id: "w11e8400-e29b-41d4-a716-446655440000"
+  workflow_instance_id: "x11e8400-e29b-41d4-a716-446655440000"
+  workflow_code: "DOC_APPROVAL"
+  entity_id: "ee0e8400-e29b-41d4-a716-446655440000"
+  entity_type: "document"
+  action: "reject"
+  status: "rejected"
+  completed_by: "550e8400-e29b-41d4-a716-446655440002"
+  comment: "Сумма документа превышает лимит"
+  next_status: "rejected"
+  workflow_completed: true
+  completed_at: "2025-01-16T10:00:00Z"

@@ -1,0 +1,336 @@
+# ============================================
+# Справочник: Бизнес-процессы (Workflows)
+# ============================================
+version: "1.0.0"
+type: registry
+name: "workflows"
+description: "Справочник бизнес-процессов (маршрутов согласования)"
+
+fields:
+  - id:
+      type: uuid
+      primary: true
+      description: "Уникальный идентификатор бизнес-процесса"
+
+  - code:
+      type: string
+      required: true
+      unique: true
+      indexed: true
+      max_length: 50
+      description: "Кодовое имя процесса"
+      example: "DOC_APPROVAL"
+
+  - name:
+      type: string
+      required: true
+      max_length: 200
+      description: "Название бизнес-процесса"
+      example: "Согласование документов"
+
+  - description:
+      type: string
+      max_length: 500
+      description: "Описание процесса"
+      example: "Процесс согласования документов с руководителем и бухгалтерией"
+
+  - entity_type:
+      type: string
+      required: true
+      indexed: true
+      enum: ["document", "contract", "invoice", "payment", "order", "custom"]
+      description: "Тип сущности, к которой применяется процесс"
+      example: "document"
+
+  - statuses:
+      type: array
+      required: true
+      description: "Статусы процесса"
+      items:
+        type: object
+        required: ["id", "name"]
+        properties:
+          id: { type: string }
+          name: { type: string }
+          description: { type: string }
+          is_start: { type: boolean, default: false }
+          is_end: { type: boolean, default: false }
+          is_terminate: { type: boolean, default: false }
+          color: { type: string, pattern: "^#[0-9a-fA-F]{6}$" }
+
+  - transitions:
+      type: array
+      required: true
+      description: "Переходы между статусами"
+      items:
+        type: object
+        required: ["from", "to", "action"]
+        properties:
+          from: { type: string }
+          to: { type: string }
+          action: { type: string }
+          label: { type: string }
+          condition: { type: string }
+          roles:
+            type: array
+            items: { type: string }
+          notify:
+            type: array
+            items: { type: string }
+
+  - tasks:
+      type: array
+      description: "Задачи в рамках процесса"
+      items:
+        type: object
+        required: ["id", "name", "status_from", "status_to"]
+        properties:
+          id: { type: string }
+          name: { type: string }
+          description: { type: string }
+          status_from: { type: string }
+          status_to: { type: string }
+          assignee_role: { type: string }
+          assignee_user: { type: uuid }
+          deadline_hours: { type: integer }
+          priority:
+            type: string
+            enum: ["low", "medium", "high"]
+            default: "medium"
+          required: { type: boolean, default: true }
+          auto_approve: { type: boolean, default: false }
+          timeout_action: { type: string }
+
+  - version:
+      type: integer
+      default: 1
+      description: "Версия процесса"
+
+  - is_active:
+      type: boolean
+      default: true
+
+  - created_at:
+      type: datetime
+      default: "now()"
+
+  - updated_at:
+      type: datetime
+      default: "now()"
+
+examples:
+  - id: "w10e8400-e29b-41d4-a716-446655440000"
+    code: "DOC_APPROVAL"
+    name: "Согласование документов"
+    description: "Процесс согласования документов с руководителем и бухгалтерией"
+    entity_type: "document"
+    statuses:
+      - id: "draft"
+        name: "Черновик"
+        description: "Документ создан, ожидает отправки"
+        is_start: true
+        color: "#9E9E9E"
+      - id: "pending_manager"
+        name: "Ожидает согласования руководителя"
+        description: "Документ отправлен руководителю"
+        color: "#FFC107"
+      - id: "pending_accountant"
+        name: "Ожидает согласования бухгалтерии"
+        description: "Согласовано руководителем, ждет бухгалтера"
+        color: "#FF9800"
+      - id: "approved"
+        name: "Согласован"
+        description: "Документ полностью согласован"
+        is_end: true
+        color: "#4CAF50"
+      - id: "rejected"
+        name: "Отклонен"
+        description: "Документ отклонен"
+        is_terminate: true
+        color: "#F44336"
+    transitions:
+      - from: "draft"
+        to: "pending_manager"
+        action: "send_for_approval"
+        label: "Отправить на согласование"
+        roles: ["accountant", "manager"]
+      - from: "pending_manager"
+        to: "pending_accountant"
+        action: "approve"
+        label: "Согласовать"
+        roles: ["manager"]
+        notify: ["accountant"]
+      - from: "pending_manager"
+        to: "rejected"
+        action: "reject"
+        label: "Отклонить"
+        roles: ["manager"]
+        notify: ["creator"]
+      - from: "pending_accountant"
+        to: "approved"
+        action: "approve"
+        label: "Согласовать"
+        roles: ["accountant"]
+        notify: ["creator", "manager"]
+      - from: "pending_accountant"
+        to: "rejected"
+        action: "reject"
+        label: "Отклонить"
+        roles: ["accountant"]
+        notify: ["creator", "manager"]
+    tasks:
+      - id: "task_manager"
+        name: "Согласование руководителем"
+        description: "Руководитель должен проверить документ"
+        status_from: "draft"
+        status_to: "pending_manager"
+        assignee_role: "manager"
+        deadline_hours: 24
+        priority: "high"
+        required: true
+      - id: "task_accountant"
+        name: "Согласование бухгалтерией"
+        description: "Бухгалтер должен проверить документ"
+        status_from: "pending_manager"
+        status_to: "pending_accountant"
+        assignee_role: "accountant"
+        deadline_hours: 48
+        priority: "high"
+        required: true
+    is_active: true
+
+  - id: "w10e8400-e29b-41d4-a716-446655440001"
+    code: "PAYMENT_APPROVAL"
+    name: "Согласование платежей"
+    description: "Процесс согласования платежей"
+    entity_type: "payment"
+    statuses:
+      - id: "draft"
+        name: "Заявка создана"
+        is_start: true
+        color: "#9E9E9E"
+      - id: "pending_chief"
+        name: "Ожидает согласования руководителя"
+        color: "#FFC107"
+      - id: "pending_finance"
+        name: "Ожидает согласования финансового директора"
+        color: "#FF9800"
+      - id: "approved"
+        name: "Согласован"
+        is_end: true
+        color: "#4CAF50"
+      - id: "rejected"
+        name: "Отклонен"
+        is_terminate: true
+        color: "#F44336"
+    transitions:
+      - from: "draft"
+        to: "pending_chief"
+        action: "send_for_approval"
+        roles: ["finance"]
+      - from: "pending_chief"
+        to: "pending_finance"
+        action: "approve"
+        roles: ["chief"]
+      - from: "pending_chief"
+        to: "rejected"
+        action: "reject"
+        roles: ["chief"]
+      - from: "pending_finance"
+        to: "approved"
+        action: "approve"
+        roles: ["finance_director"]
+      - from: "pending_finance"
+        to: "rejected"
+        action: "reject"
+        roles: ["finance_director"]
+    tasks:
+      - id: "task_chief"
+        name: "Согласование руководителем"
+        status_from: "draft"
+        status_to: "pending_chief"
+        assignee_role: "chief"
+        deadline_hours: 24
+        priority: "high"
+      - id: "task_finance"
+        name: "Согласование финансовым директором"
+        status_from: "pending_chief"
+        status_to: "pending_finance"
+        assignee_role: "finance_director"
+        deadline_hours: 48
+        priority: "high"
+    is_active: true
+
+  - id: "w10e8400-e29b-41d4-a716-446655440002"
+    code: "CONTRACT_APPROVAL"
+    name: "Согласование договоров"
+    description: "Процесс согласования договоров с клиентами"
+    entity_type: "contract"
+    statuses:
+      - id: "draft"
+        name: "Черновик договора"
+        is_start: true
+        color: "#9E9E9E"
+      - id: "pending_legal"
+        name: "Проверка юристом"
+        color: "#FFC107"
+      - id: "pending_manager"
+        name: "Согласование руководителем"
+        color: "#FF9800"
+      - id: "pending_client"
+        name: "Ожидает подписи клиента"
+        color: "#2196F3"
+      - id: "signed"
+        name: "Подписан"
+        is_end: true
+        color: "#4CAF50"
+      - id: "rejected"
+        name: "Отклонен"
+        is_terminate: true
+        color: "#F44336"
+    transitions:
+      - from: "draft"
+        to: "pending_legal"
+        action: "send_to_legal"
+        roles: ["manager"]
+      - from: "pending_legal"
+        to: "pending_manager"
+        action: "legal_approved"
+        roles: ["legal"]
+      - from: "pending_legal"
+        to: "rejected"
+        action: "legal_rejected"
+        roles: ["legal"]
+      - from: "pending_manager"
+        to: "pending_client"
+        action: "manager_approved"
+        roles: ["manager"]
+      - from: "pending_manager"
+        to: "rejected"
+        action: "manager_rejected"
+        roles: ["manager"]
+      - from: "pending_client"
+        to: "signed"
+        action: "client_signed"
+        roles: ["manager"]
+    tasks:
+      - id: "task_legal"
+        name: "Проверка юристом"
+        status_from: "draft"
+        status_to: "pending_legal"
+        assignee_role: "legal"
+        deadline_hours: 24
+      - id: "task_manager"
+        name: "Согласование руководителем"
+        status_from: "pending_legal"
+        status_to: "pending_manager"
+        assignee_role: "manager"
+        deadline_hours: 24
+      - id: "task_client"
+        name: "Ожидание подписи клиента"
+        status_from: "pending_manager"
+        status_to: "pending_client"
+        assignee_role: "manager"
+        deadline_hours: 168
+        auto_approve: false
+    is_active: true

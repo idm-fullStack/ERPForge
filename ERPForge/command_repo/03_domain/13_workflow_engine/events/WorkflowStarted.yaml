@@ -1,0 +1,64 @@
+# ============================================
+# Событие: Бизнес-процесс запущен
+# ============================================
+name: "WorkflowStarted"
+description: "Бизнес-процесс успешно запущен"
+version: "1.0.0"
+
+fields:
+  - event_id:
+      type: uuid
+      required: true
+
+  - workflow_instance_id:
+      type: uuid
+      required: true
+
+  - workflow_code:
+      type: string
+      required: true
+
+  - workflow_name:
+      type: string
+      required: true
+
+  - entity_id:
+      type: uuid
+      required: true
+
+  - entity_type:
+      type: string
+      required: true
+
+  - initial_status:
+      type: string
+      required: true
+
+  - started_by:
+      type: uuid
+      required: true
+
+  - tasks_created:
+      type: integer
+      required: true
+
+  - started_at:
+      type: datetime
+      required: true
+
+reactions:
+  - "Отправить уведомления исполнителям задач"
+  - "Запись в Audit Log"
+  - "Обновить дашборд задач"
+
+example:
+  event_id: "x10e8400-e29b-41d4-a716-446655440000"
+  workflow_instance_id: "x11e8400-e29b-41d4-a716-446655440000"
+  workflow_code: "DOC_APPROVAL"
+  workflow_name: "Согласование документов"
+  entity_id: "ee0e8400-e29b-41d4-a716-446655440000"
+  entity_type: "document"
+  initial_status: "draft"
+  started_by: "550e8400-e29b-41d4-a716-446655440001"
+  tasks_created: 1
+  started_at: "2025-01-15T14:30:00Z"

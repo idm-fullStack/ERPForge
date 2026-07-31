@@ -1,0 +1,112 @@
+# ============================================
+# Команда: Согласовать задачу
+# ============================================
+name: "ApproveTask"
+description: "Согласование задачи (положительное решение)"
+version: "1.0.0"
+
+inputs:
+  - task_id:
+      type: uuid
+      required: true
+      description: "ID задачи"
+
+  - user_id:
+      type: uuid
+      required: true
+      description: "ID пользователя, выполняющего задачу"
+
+  - comment:
+      type: string
+      nullable: true
+      max_length: 2000
+      description: "Комментарий к решению"
+
+pre_conditions:
+  - "Задача существует"
+  - "Задача в статусе 'pending' или 'in_progress'"
+  - "Пользователь назначен на задачу или имеет соответствующую роль"
+  - "Срок выполнения не истек"
+
+post_conditions:
+  - "Задача выполнена"
+  - "Статус сущности обновлен"
+  - "Созданы следующие задачи (если есть)"
+
+process:
+  steps:
+    - name: "GetTask"
+      action: "SELECT * FROM tasks WHERE id = '{task_id}'"
+
+    - name: "ValidateTask"
+      check: "task.status == 'pending' OR task.status == 'in_progress'"
+      on_fail: "Ошибка: задача уже выполнена или неактивна"
+
+    - name: "CheckDeadline"
+      check: "task.deadline > now() OR task.deadline IS NULL"
+      on_fail: "Ошибка: срок выполнения истек"
+
+    - name: "UpdateTask"
+      action: |
+        UPDATE tasks 
+        SET status = 'completed',
+            completed_at = now(),
+            completed_by = '{user_id}',
+            comment = '{comment}'
+        WHERE id = '{task_id}'
+
+    - name: "ProcessTransition"
+      action: "Найти переход из workflow для этого статуса"
+
+    - name: "UpdateEntityStatus"
+      action: "UPDATE {entity_type} SET status = '{next_status}' WHERE id = '{entity_id}'"
+
+    - name: "CreateNextTasks"
+      action: |
+        FOR each task in workflow.tasks:
+          IF task.status_from == next_status:
+            CREATE new task
+
+    - name: "CheckWorkflowComplete"
+      action: |
+        IF next_status.is_end == true:
+          workflow_completed = true
+          UPDATE workflow_instance SET status = 'completed'
+
+    - name: "NotifyStakeholders"
+      action: "Отправить уведомления о результате"
+
+    - name: "LogTaskApprove"
+      action: "INSERT INTO task_log"
+
+outputs:
+  - status:
+      type: string
+      enum: ["success", "failed"]
+
+  - next_status:
+      type: string
+      description: "Новый статус сущности"
+
+  - next_tasks:
+      type: array
+      description: "Список следующих задач"
+
+  - workflow_completed:
+      type: boolean
+
+  - errors:
+      type: array
+      nullable: true
+
+events:
+  on_success:
+    - TaskCompleted.yaml
+  on_failure:
+    - TaskApproveFailed.yaml
+
+example:
+  inputs:
+    task_id: "w11e8400-e29b-41d4-a716-446655440000"
+    user_id: "550e8400-e29b-41d4-a716-446655440002"
+    comment: "Документ проверен, замечаний нет"

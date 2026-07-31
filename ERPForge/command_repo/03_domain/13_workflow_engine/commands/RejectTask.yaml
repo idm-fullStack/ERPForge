@@ -1,0 +1,92 @@
+# ============================================
+# Команда: Отклонить задачу
+# ============================================
+name: "RejectTask"
+description: "Отклонение задачи (отрицательное решение)"
+version: "1.0.0"
+
+inputs:
+  - task_id:
+      type: uuid
+      required: true
+      description: "ID задачи"
+
+  - user_id:
+      type: uuid
+      required: true
+      description: "ID пользователя, выполняющего задачу"
+
+  - reason:
+      type: string
+      required: true
+      max_length: 2000
+      description: "Причина отклонения"
+
+pre_conditions:
+  - "Задача существует"
+  - "Задача в статусе 'pending' или 'in_progress'"
+  - "Пользователь назначен на задачу или имеет соответствующую роль"
+
+post_conditions:
+  - "Задача отклонена"
+  - "Процесс завершен (отклонен)"
+  - "Сущность переведена в статус 'rejected'"
+
+process:
+  steps:
+    - name: "GetTask"
+      action: "SELECT * FROM tasks WHERE id = '{task_id}'"
+
+    - name: "ValidateTask"
+      check: "task.status == 'pending' OR task.status == 'in_progress'"
+      on_fail: "Ошибка: задача уже выполнена или неактивна"
+
+    - name: "UpdateTask"
+      action: |
+        UPDATE tasks 
+        SET status = 'rejected',
+            completed_at = now(),
+            completed_by = '{user_id}',
+            comment = '{reason}'
+        WHERE id = '{task_id}'
+
+    - name: "UpdateEntityStatus"
+      action: "UPDATE {entity_type} SET status = 'rejected' WHERE id = '{entity_id}'"
+
+    - name: "TerminateWorkflow"
+      action: "UPDATE workflow_instance SET status = 'rejected', rejected_at = now(), rejected_by = '{user_id}', reject_reason = '{reason}'"
+
+    - name: "NotifyStakeholders"
+      action: "Отправить уведомление о отклонении"
+
+    - name: "LogTaskReject"
+      action: "INSERT INTO task_log"
+
+outputs:
+  - status:
+      type: string
+      enum: ["success", "failed"]
+
+  - entity_id:
+      type: uuid
+      description: "ID сущности"
+
+  - workflow_status:
+      type: string
+      description: "Статус процесса (rejected)"
+
+  - errors:
+      type: array
+      nullable: true
+
+events:
+  on_success:
+    - TaskCompleted.yaml
+  on_failure:
+    - TaskRejectFailed.yaml
+
+example:
+  inputs:
+    task_id: "w11e8400-e29b-41d4-a716-446655440000"
+    user_id: "550e8400-e29b-41d4-a716-446655440002"
+    reason: "Сумма документа превышает лимит. Требуется дополнительное согласование."

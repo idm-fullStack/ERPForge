@@ -1,0 +1,133 @@
+# ============================================
+# Справочник: Задачи (Tasks)
+# ============================================
+version: "1.0.0"
+type: registry
+name: "tasks"
+description: "Справочник задач, созданных в рамках бизнес-процессов"
+
+fields:
+  - id:
+      type: uuid
+      primary: true
+
+  - workflow_id:
+      type: uuid
+      required: true
+      indexed: true
+      foreign_key: "workflows.id"
+      description: "ID бизнес-процесса"
+
+  - entity_id:
+      type: uuid
+      required: true
+      indexed: true
+      description: "ID сущности (документа, платежа и т.д.)"
+
+  - entity_type:
+      type: string
+      required: true
+      indexed: true
+      description: "Тип сущности"
+      example: "document"
+
+  - task_definition_id:
+      type: string
+      required: true
+      description: "ID определения задачи из workflow"
+
+  - title:
+      type: string
+      required: true
+      max_length: 300
+      description: "Название задачи"
+      example: "Согласование документа СЧ-2025-001"
+
+  - description:
+      type: string
+      max_length: 2000
+      description: "Описание задачи"
+
+  - status:
+      type: string
+      required: true
+      indexed: true
+      enum: ["pending", "in_progress", "completed", "rejected", "expired", "skipped"]
+      default: "pending"
+      description: "Статус задачи"
+
+  - assigned_to:
+      type: uuid
+      nullable: true
+      indexed: true
+      description: "ID пользователя, назначенного на задачу"
+
+  - assigned_role:
+      type: string
+      nullable: true
+      description: "Роль, назначенная на задачу"
+
+  - created_by:
+      type: uuid
+      required: true
+      description: "ID пользователя, создавшего задачу"
+
+  - deadline:
+      type: datetime
+      nullable: true
+      description: "Срок выполнения"
+
+  - completed_at:
+      type: datetime
+      nullable: true
+      description: "Дата выполнения"
+
+  - completed_by:
+      type: uuid
+      nullable: true
+      description: "ID пользователя, выполнившего задачу"
+
+  - comment:
+      type: string
+      max_length: 2000
+      description: "Комментарий к выполнению"
+
+  - priority:
+      type: string
+      enum: ["low", "medium", "high", "critical"]
+      default: "medium"
+      description: "Приоритет задачи"
+
+  - due_reminder_sent:
+      type: boolean
+      default: false
+      description: "Отправлено напоминание о сроке"
+
+  - expired_at:
+      type: datetime
+      nullable: true
+      description: "Дата истечения срока"
+
+  - created_at:
+      type: datetime
+      default: "now()"
+
+  - updated_at:
+      type: datetime
+      default: "now()"
+
+examples:
+  - id: "w11e8400-e29b-41d4-a716-446655440000"
+    workflow_id: "w10e8400-e29b-41d4-a716-446655440000"
+    entity_id: "ee0e8400-e29b-41d4-a716-446655440000"
+    entity_type: "document"
+    task_definition_id: "task_manager"
+    title: "Согласование документа СЧ-2025-001"
+    description: "Проверить документ СЧ-2025-001 и принять решение"
+    status: "pending"
+    assigned_to: "550e8400-e29b-41d4-a716-446655440002"
+    assigned_role: "manager"
+    created_by: "550e8400-e29b-41d4-a716-446655440001"
+    deadline: "2025-01-20T18:00:00Z"
+    priority: "high"
+    created_at: "2025-01-15T14:30:00Z"

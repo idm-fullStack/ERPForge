@@ -1,0 +1,114 @@
+# ============================================
+# Команда: Запустить бизнес-процесс
+# ============================================
+name: "StartWorkflow"
+description: "Запуск бизнес-процесса для сущности"
+version: "1.0.0"
+
+inputs:
+  - workflow_code:
+      type: string
+      required: true
+      description: "Код бизнес-процесса"
+      example: "DOC_APPROVAL"
+
+  - entity_id:
+      type: uuid
+      required: true
+      description: "ID сущности"
+
+  - entity_type:
+      type: string
+      required: true
+      description: "Тип сущности"
+      example: "document"
+
+  - user_id:
+      type: uuid
+      required: true
+      description: "ID пользователя, запускающего процесс"
+
+  - initial_status:
+      type: string
+      required: true
+      description: "Начальный статус"
+      example: "draft"
+
+  - parameters:
+      type: object
+      nullable: true
+      description: "Дополнительные параметры"
+
+pre_conditions:
+  - "Бизнес-процесс существует и активен"
+  - "Сущность существует"
+  - "У пользователя есть право на запуск процесса"
+
+post_conditions:
+  - "Бизнес-процесс запущен"
+  - "Созданы задачи"
+  - "Статус сущности обновлен"
+
+process:
+  steps:
+    - name: "GetWorkflow"
+      action: "SELECT * FROM workflows WHERE code = '{workflow_code}' AND is_active = true"
+
+    - name: "ValidateEntity"
+      action: "Проверить, что сущность существует и не в процессе"
+
+    - name: "GetStartStatus"
+      action: "Найти статус с is_start = true"
+
+    - name: "UpdateEntityStatus"
+      action: "UPDATE {entity_type} SET status = '{start_status}' WHERE id = '{entity_id}'"
+
+    - name: "CreateTasks"
+      action: |
+        FOR each task in workflow.tasks:
+          IF task.status_from == start_status:
+            INSERT INTO tasks (
+              workflow_id, entity_id, entity_type, task_definition_id,
+              title, description, assigned_role, deadline, priority
+            ) VALUES (...)
+
+    - name: "AssignTasks"
+      action: "Для каждой задачи найти пользователя по роли"
+
+    - name: "LogWorkflowStart"
+      action: "INSERT INTO workflow_log"
+
+outputs:
+  - status:
+      type: string
+      enum: ["success", "failed"]
+
+  - workflow_instance_id:
+      type: uuid
+      description: "ID запущенного процесса"
+
+  - tasks_created:
+      type: integer
+      description: "Количество созданных задач"
+
+  - next_status:
+      type: string
+      description: "Следующий статус"
+
+  - errors:
+      type: array
+      nullable: true
+
+events:
+  on_success:
+    - WorkflowStarted.yaml
+  on_failure:
+    - WorkflowStartFailed.yaml
+
+example:
+  inputs:
+    workflow_code: "DOC_APPROVAL"
+    entity_id: "ee0e8400-e29b-41d4-a716-446655440000"
+    entity_type: "document"
+    user_id: "550e8400-e29b-41d4-a716-446655440001"
+    initial_status: "draft"
