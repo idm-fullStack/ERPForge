@@ -1,0 +1,60 @@
+# ============================================
+# Событие: Подписка отменена
+# ============================================
+name: "SubscriptionCanceled"
+description: "Подписка отменена"
+version: "1.0.0"
+
+fields:
+  - event_id:
+      type: uuid
+      required: true
+
+  - subscription_id:
+      type: uuid
+      required: true
+
+  - tenant_id:
+      type: uuid
+      required: true
+
+  - plan_name:
+      type: string
+      required: true
+
+  - cancel_reason:
+      type: string
+      required: true
+
+  - cancel_at_period_end:
+      type: boolean
+      required: true
+
+  - effective_cancel_date:
+      type: datetime
+      required: true
+
+  - canceled_by:
+      type: uuid
+      required: true
+
+  - canceled_at:
+      type: datetime
+      required: true
+
+reactions:
+  - "Отправить письмо клиенту"
+  - "Создать задачу на возврат (при необходимости)"
+  - "Обновить дашборд клиентов"
+  - "Анализировать причины отмены"
+
+example:
+  event_id: "b11e8400-e29b-41d4-a716-446655440000"
+  subscription_id: "990e8400-e29b-41d4-a716-446655440000"
+  tenant_id: "660e8400-e29b-41d4-a716-446655440000"
+  plan_name: "Базовый (5 000 ₽/мес)"
+  cancel_reason: "too_expensive"
+  cancel_at_period_end: true
+  effective_cancel_date: "2025-02-15T00:00:00Z"
+  canceled_by: "550e8400-e29b-41d4-a716-446655440001"
+  canceled_at: "2025-01-15T14:30:00Z"

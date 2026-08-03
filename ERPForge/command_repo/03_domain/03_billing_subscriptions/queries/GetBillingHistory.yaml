@@ -1,0 +1,117 @@
+# ============================================
+# Запрос: Получить историю биллинга
+# ============================================
+name: "GetBillingHistory"
+description: "Получение истории платежей и счетов"
+version: "1.0.0"
+
+inputs:
+  - tenant_id:
+      type: uuid
+      required: true
+      description: "ID клиента"
+
+  - subscription_id:
+      type: uuid
+      nullable: true
+      description: "Фильтр по подписке"
+
+  - date_from:
+      type: datetime
+      nullable: true
+      description: "Дата начала периода"
+
+  - date_to:
+      type: datetime
+      nullable: true
+      description: "Дата конца периода"
+
+  - status:
+      type: string
+      nullable: true
+      enum: ["draft", "sent", "paid", "failed", "refunded", "overdue"]
+      description: "Фильтр по статусу"
+
+  - limit:
+      type: integer
+      default: 100
+      min: 1
+      max: 1000
+
+  - offset:
+      type: integer
+      default: 0
+
+outputs:
+  - invoices:
+      type: array
+      items:
+        type: object
+        properties:
+          id: { type: uuid }
+          number: { type: string }
+          amount: { type: numeric }
+          currency: { type: string }
+          status: { type: string }
+          issued_at: { type: datetime }
+          due_date: { type: datetime }
+          paid_at: { type: datetime, nullable: true }
+          payment_method: { type: string }
+          provider_transaction_id: { type: string, nullable: true }
+          items:
+            type: array
+            items:
+              type: object
+              properties:
+                name: { type: string }
+                quantity: { type: integer }
+                unit_price: { type: numeric }
+                amount: { type: numeric }
+
+  - summary:
+      type: object
+      properties:
+        total_invoices: { type: integer }
+        total_paid: { type: numeric }
+        total_unpaid: { type: numeric }
+        total_refunded: { type: numeric }
+        first_invoice_date: { type: datetime }
+        last_invoice_date: { type: datetime }
+
+  - pagination:
+      type: object
+      properties:
+        limit: { type: integer }
+        offset: { type: integer }
+        total: { type: integer }
+        total_pages: { type: integer }
+
+example_response:
+  invoices:
+    - id: "ab0e8400-e29b-41d4-a716-446655440000"
+      number: "INV-2025-001"
+      amount: 5000.00
+      currency: "RUB"
+      status: "paid"
+      issued_at: "2025-01-01T00:00:00Z"
+      due_date: "2025-01-15T00:00:00Z"
+      paid_at: "2025-01-01T10:00:00Z"
+      payment_method: "card"
+      provider_transaction_id: "txn_123456789"
+      items:
+        - name: "Подписка Базовый 5 000 ₽/мес (январь 2025)"
+          quantity: 1
+          unit_price: 5000.00
+          amount: 5000.00
+  summary:
+    total_invoices: 12
+    total_paid: 60000.00
+    total_unpaid: 0.00
+    total_refunded: 0.00
+    first_invoice_date: "2024-01-01T00:00:00Z"
+    last_invoice_date: "2024-12-01T00:00:00Z"
+  pagination:
+    limit: 100
+    offset: 0
+    total: 12
+    total_pages: 1

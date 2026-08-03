@@ -1,0 +1,82 @@
+# ============================================
+# Событие: Подписка создана
+# ============================================
+name: "SubscriptionCreated"
+description: "Новая подписка успешно создана"
+version: "1.0.0"
+
+fields:
+  - event_id:
+      type: uuid
+      required: true
+
+  - subscription_id:
+      type: uuid
+      required: true
+
+  - tenant_id:
+      type: uuid
+      required: true
+
+  - plan_id:
+      type: uuid
+      required: true
+
+  - plan_name:
+      type: string
+      required: true
+
+  - status:
+      type: string
+      required: true
+      enum: ["trial", "active", "pending"]
+
+  - billing_period:
+      type: string
+      required: true
+      enum: ["monthly", "annual"]
+
+  - amount:
+      type: numeric
+      required: true
+
+  - currency:
+      type: string
+      required: true
+
+  - is_trial:
+      type: boolean
+      required: true
+
+  - trial_end_at:
+      type: datetime
+      nullable: true
+
+  - created_by:
+      type: uuid
+      required: true
+
+  - created_at:
+      type: datetime
+      required: true
+
+reactions:
+  - "Создать счет на оплату"
+  - "Отправить приветственное письмо клиенту"
+  - "Создать задачу для менеджера"
+  - "Обновить дашборд клиентов"
+
+example:
+  event_id: "b10e8400-e29b-41d4-a716-446655440000"
+  subscription_id: "990e8400-e29b-41d4-a716-446655440000"
+  tenant_id: "660e8400-e29b-41d4-a716-446655440000"
+  plan_id: "880e8400-e29b-41d4-a716-446655440000"
+  plan_name: "Базовый (5 000 ₽/мес)"
+  status: "trial"
+  billing_period: "monthly"
+  amount: 5000.00
+  currency: "RUB"
+  is_trial: true
+  trial_end_at: "2025-01-22T00:00:00Z"
+  created_by: "550e8400-e29b-41d4-a716-446655440001"
+  created_at: "2025-01-15T14:30:00Z"

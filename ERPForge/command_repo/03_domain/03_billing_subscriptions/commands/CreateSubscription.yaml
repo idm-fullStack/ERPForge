@@ -1,0 +1,172 @@
+# ============================================
+# Команда: Создать подписку
+# ============================================
+name: "CreateSubscription"
+description: "Создание новой подписки для клиента"
+version: "1.0.0"
+
+inputs:
+  - tenant_id:
+      type: uuid
+      required: true
+      description: "ID клиента"
+
+  - plan_id:
+      type: uuid
+      required: true
+      description: "ID тарифного плана"
+
+  - user_id:
+      type: uuid
+      required: true
+      description: "ID пользователя, создающего подписку"
+
+  - billing_period:
+      type: string
+      required: true
+      enum: ["monthly", "annual"]
+      default: "monthly"
+      description: "Период оплаты"
+
+  - payment_method:
+      type: string
+      required: true
+      enum: ["card", "invoice", "crypto", "prepaid"]
+      description: "Способ оплаты"
+
+  - payment_provider:
+      type: string
+      required: true
+      enum: ["stripe", "yookassa", "manual", "crypto"]
+      description: "Платежный провайдер"
+
+  - provider_customer_id:
+      type: string
+      nullable: true
+      description: "ID клиента в платежной системе"
+
+  - is_trial:
+      type: boolean
+      default: false
+      description: "Пробный период"
+
+  - trial_days:
+      type: integer
+      nullable: true
+      min: 1
+      max: 30
+      description: "Длительность пробного периода"
+
+  - promo_code:
+      type: string
+      nullable: true
+      description: "Промокод на скидку"
+
+  - auto_renew:
+      type: boolean
+      default: true
+      description: "Автоматическое продление"
+
+pre_conditions:
+  - "Клиент существует и активен"
+  - "Тарифный план существует и активен"
+  - "У пользователя есть право 'subscriptions.create'"
+  - "Клиент не имеет активной подписки на тот же план"
+
+post_conditions:
+  - "Подписка создана"
+  - "Создан счет на оплату"
+  - "Запись в Audit Log"
+
+process:
+  steps:
+    - name: "ValidateTenant"
+      check: "tenant.exists AND tenant.status == 'active'"
+      on_fail: "Ошибка: клиент не существует или неактивен"
+
+    - name: "ValidatePlan"
+      check: "plan.exists AND plan.is_active == true"
+      on_fail: "Ошибка: тарифный план не существует или неактивен"
+
+    - name: "CheckExistingSubscription"
+      check: "SELECT COUNT(*) FROM subscriptions WHERE tenant_id = '{tenant_id}' AND status IN ('active', 'trial')"
+      on_fail: "Ошибка: у клиента уже есть активная подписка"
+
+    - name: "ApplyPromoCode"
+      condition: "promo_code IS NOT NULL"
+      action: "Проверить промокод и применить скидку"
+
+    - name: "CalculatePrice"
+      action: |
+        IF billing_period == 'annual':
+          price = plan.price_annual
+        ELSE:
+          price = plan.price_monthly
+        IF promo_code:
+          price = price * (1 - promo_code.discount_percent / 100)
+
+    - name: "CreateSubscription"
+      action: |
+        INSERT INTO subscriptions (
+          tenant_id, plan_id, status, billing_period,
+          start_date, current_period_start, current_period_end,
+          payment_method, payment_provider, provider_customer_id,
+          auto_renew, is_trial, trial_end_at, created_at, created_by
+        ) VALUES (
+          '{tenant_id}', '{plan_id}', '{status}', '{billing_period}',
+          now(), now(), '{period_end}',
+          '{payment_method}', '{payment_provider}', '{provider_customer_id}',
+          '{auto_renew}', '{is_trial}', '{trial_end_at}', now(), '{user_id}'
+        )
+
+    - name: "CreateInvoice"
+      action: "Создать счет на оплату (см. ProcessPayment)"
+
+    - name: "CreateTaxLiability"
+      action: "Создать налоговое обязательство по подписке"
+
+    - name: "LogAudit"
+      action: "INSERT INTO audit_log (action, user_id, tenant_id, details)"
+
+outputs:
+  - status:
+      type: string
+      enum: ["success", "failed"]
+
+  - subscription_id:
+      type: uuid
+      description: "ID созданной подписки"
+
+  - invoice_id:
+      type: uuid
+      description: "ID созданного счета"
+
+  - payment_link:
+      type: string
+      description: "Ссылка на оплату"
+
+  - amount:
+      type: numeric
+      description: "Сумма к оплате"
+
+  - errors:
+      type: array
+      nullable: true
+
+events:
+  on_success:
+    - SubscriptionCreated.yaml
+  on_failure:
+    - SubscriptionCreationFailed.yaml
+
+example:
+  inputs:
+    tenant_id: "660e8400-e29b-41d4-a716-446655440000"
+    plan_id: "880e8400-e29b-41d4-a716-446655440000"
+    user_id: "550e8400-e29b-41d4-a716-446655440001"
+    billing_period: "monthly"
+    payment_method: "card"
+    payment_provider: "stripe"
+    is_trial: true
+    trial_days: 7
+    auto_renew: true

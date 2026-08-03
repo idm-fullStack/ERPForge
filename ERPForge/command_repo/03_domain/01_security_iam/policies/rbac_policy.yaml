@@ -1,0 +1,150 @@
+# ============================================
+# Политика: RBAC (Role-Based Access Control)
+# ============================================
+version: "1.0.0"
+name: "rbac_policy"
+description: "Политика управления доступом на основе ролей"
+
+# Принципы
+principles:
+  - "Наименьших привилегий"
+  - "Разделения обязанностей"
+  - "Необходимости знать"
+  - "Аудита всех изменений"
+
+# Матрица доступа
+access_matrix:
+  super_admin:
+    description: "Полный доступ ко всему"
+    scope: "global"
+    rules:
+      - resource: "*"
+        actions: ["*"]
+
+  admin:
+    description: "Администратор клиента"
+    scope: "tenant"
+    rules:
+      - resource: "*"
+        actions: ["*"]
+        scope: "tenant"
+      - resource: "tenants"
+        actions: []
+        scope: "global"
+
+  accountant:
+    description: "Бухгалтер"
+    scope: "tenant"
+    rules:
+      - resource: "documents"
+        actions: ["create", "read", "update", "post", "cancel", "export"]
+      - resource: "registers"
+        actions: ["read", "export"]
+      - resource: "counterparties"
+        actions: ["create", "read", "update", "export"]
+      - resource: "nomenclature"
+        actions: ["create", "read", "update", "export"]
+      - resource: "enterprises"
+        actions: ["read"]
+      - resource: "tax_declarations"
+        actions: ["create", "read", "update", "submit", "export"]
+      - resource: "reports"
+        actions: ["read", "generate", "export"]
+      - resource: "payments"
+        actions: ["read"]
+      - resource: "users"
+        actions: ["read"]
+      - resource: "audit"
+        actions: ["read"]
+
+  manager:
+    description: "Руководитель"
+    scope: "tenant"
+    rules:
+      - resource: "reports"
+        actions: ["read", "export"]
+      - resource: "unit_economics"
+        actions: ["read", "export"]
+      - resource: "dashboard"
+        actions: ["read"]
+      - resource: "bi"
+        actions: ["read"]
+      - resource: "documents"
+        actions: ["read"]
+      - resource: "tax_declarations"
+        actions: ["read"]
+      - resource: "employees"
+        actions: ["read"]
+      - resource: "crm"
+        actions: ["read"]
+
+  sales:
+    description: "Менеджер продаж"
+    scope: "tenant"
+    rules:
+      - resource: "leads"
+        actions: ["create", "read", "update", "convert", "assign"]
+      - resource: "opportunities"
+        actions: ["create", "read", "update", "close"]
+      - resource: "contracts"
+        actions: ["create", "read", "update", "send"]
+      - resource: "commercial_offers"
+        actions: ["create", "read", "update", "send"]
+      - resource: "counterparties"
+        actions: ["create", "read", "update"]
+
+  hrm:
+    description: "HR-специалист"
+    scope: "tenant"
+    rules:
+      - resource: "employees"
+        actions: ["create", "read", "update", "hire", "fire", "transfer"]
+      - resource: "timesheets"
+        actions: ["create", "read", "update", "approve"]
+      - resource: "payroll"
+        actions: ["read"]
+      - resource: "vacations"
+        actions: ["create", "read", "update", "approve"]
+
+  auditor:
+    description: "Аудитор"
+    scope: "tenant"
+    rules:
+      - resource: "audit"
+        actions: ["read", "export"]
+      - resource: "registers"
+        actions: ["read"]
+      - resource: "documents"
+        actions: ["read"]
+
+  readonly:
+    description: "Только чтение"
+    scope: "tenant"
+    rules:
+      - resource: "*"
+        actions: ["read"]
+
+# Проверки
+validations:
+  - name: "check_critical_actions"
+    description: "Критические действия требуют подтверждения"
+    rules:
+      - action: "delete"
+        resource: "documents"
+        require_approval: true
+
+      - action: "fire"
+        resource: "employees"
+        require_approval: true
+
+  - name: "segregation_of_duties"
+    description: "Разделение обязанностей"
+    rules:
+      - "Пользователь не может одновременно иметь роли 'accountant' и 'auditor'"
+      - "Пользователь не может одновременно иметь роли 'hrm' и 'payroll'"
+
+# Аудит
+audit:
+  log_all_access: true
+  log_denied_access: true
+  retention_days: 1825

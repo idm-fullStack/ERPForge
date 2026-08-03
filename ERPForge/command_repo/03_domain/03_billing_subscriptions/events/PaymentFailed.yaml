@@ -1,0 +1,71 @@
+# ============================================
+# Событие: Платеж не удался
+# ============================================
+name: "PaymentFailed"
+description: "Платеж не удался"
+version: "1.0.0"
+
+fields:
+  - event_id:
+      type: uuid
+      required: true
+
+  - invoice_id:
+      type: uuid
+      required: true
+
+  - tenant_id:
+      type: uuid
+      required: true
+
+  - subscription_id:
+      type: uuid
+      required: true
+
+  - amount:
+      type: numeric
+      required: true
+
+  - currency:
+      type: string
+      required: true
+
+  - payment_method:
+      type: string
+      required: true
+
+  - error_code:
+      type: string
+      required: true
+
+  - error_message:
+      type: string
+      required: true
+
+  - attempt_number:
+      type: integer
+      required: true
+
+  - failed_at:
+      type: datetime
+      required: true
+
+reactions:
+  - "Обновить статус счета на 'failed'"
+  - "Приостановить подписку (после нескольких попыток)"
+  - "Отправить уведомление клиенту"
+  - "Создать задачу для поддержки"
+  - "Записать событие в Audit Log"
+
+example:
+  event_id: "b13e8400-e29b-41d4-a716-446655440000"
+  invoice_id: "ab0e8400-e29b-41d4-a716-446655440000"
+  tenant_id: "660e8400-e29b-41d4-a716-446655440000"
+  subscription_id: "990e8400-e29b-41d4-a716-446655440000"
+  amount: 5000.00
+  currency: "RUB"
+  payment_method: "card"
+  error_code: "card_declined"
+  error_message: "Карта отклонена банком-эмитентом"
+  attempt_number: 1
+  failed_at: "2025-01-15T14:30:00Z"

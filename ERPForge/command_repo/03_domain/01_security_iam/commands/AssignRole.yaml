@@ -1,0 +1,89 @@
+# ============================================
+# Команда: Назначить роль пользователю
+# ============================================
+name: "AssignRole"
+description: "Назначение или изменение роли пользователя"
+version: "1.0.0"
+
+inputs:
+  - user_id:
+      type: uuid
+      required: true
+      description: "ID пользователя"
+
+  - role_id:
+      type: uuid
+      required: true
+      description: "ID роли"
+
+  - assigned_by:
+      type: uuid
+      required: true
+      description: "ID администратора, назначающего роль"
+
+  - reason:
+      type: string
+      max_length: 500
+      description: "Причина назначения"
+
+pre_conditions:
+  - "Пользователь существует"
+  - "Роль существует"
+  - "У администратора есть право 'roles.assign'"
+  - "Пользователь не является суперадминистратором (если не супер-админ)"
+
+post_conditions:
+  - "Роль назначена пользователю"
+  - "Обновлены permissions_override (при необходимости)"
+  - "Создана запись в Audit Log"
+
+process:
+  steps:
+    - name: "ValidateUser"
+      check: "user.exists"
+      on_fail: "Ошибка: пользователь не найден"
+
+    - name: "ValidateRole"
+      check: "role.exists"
+      on_fail: "Ошибка: роль не найдена"
+
+    - name: "CheckSuperAdmin"
+      check: "user.has_role('super_admin') == false OR assigned_by.has_role('super_admin') == true"
+      on_fail: "Ошибка: нельзя изменить роль супер-администратора"
+
+    - name: "UpdateUserRoles"
+      action: "UPDATE users SET role_ids = array_append(role_ids, '{role_id}'), updated_at = now() WHERE id = '{user_id}'"
+
+    - name: "LogAudit"
+      action: "INSERT INTO audit_log (action, user_id, target_user_id, role_id, details) VALUES ('ROLE_ASSIGNED', '{assigned_by}', '{user_id}', '{role_id}', '{reason}')"
+
+    - name: "NotifyUser"
+      action: "Отправить уведомление о назначении роли"
+
+outputs:
+  - status:
+      type: string
+      enum: ["success", "failed"]
+
+  - user_id:
+      type: uuid
+
+  - assigned_role:
+      type: object
+      properties:
+        id: { type: uuid }
+        name: { type: string }
+        display_name: { type: string }
+
+events:
+  on_success:
+    - RoleAssigned.yaml
+  on_failure:
+    - RoleAssignmentFailed.yaml
+
+example:
+  inputs:
+    user_id: "550e8400-e29b-41d4-a716-446655440001"
+    role_id: "770e8400-e29b-41d4-a716-446655440002"
+    assigned_by: "550e8400-e29b-41d4-a716-446655440000"
+    reason: "Назначение главного бухгалтера"

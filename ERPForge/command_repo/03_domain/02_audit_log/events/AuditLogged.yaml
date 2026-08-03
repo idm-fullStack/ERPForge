@@ -1,0 +1,71 @@
+# ============================================
+# Событие: Запись в аудит
+# ============================================
+name: "AuditLogged"
+description: "Событие успешно записано в лог аудита"
+version: "1.0.0"
+
+fields:
+  - event_id:
+      type: uuid
+      required: true
+      description: "ID записанного события"
+
+  - event_code:
+      type: string
+      required: true
+      description: "Код события"
+
+  - user_id:
+      type: uuid
+      nullable: true
+      description: "ID пользователя"
+
+  - tenant_id:
+      type: uuid
+      required: true
+      description: "ID клиента"
+
+  - enterprise_id:
+      type: uuid
+      nullable: true
+      description: "ID юридического лица"
+
+  - severity:
+      type: string
+      required: true
+      enum: ["info", "warning", "error", "critical", "audit_required"]
+      description: "Уровень важности"
+
+  - timestamp:
+      type: datetime
+      required: true
+      description: "Время записи"
+
+  - ip_address:
+      type: string
+      required: true
+      description: "IP-адрес"
+
+  - source:
+      type: string
+      required: true
+      description: "Источник события"
+
+reactions:
+  - "Если severity == 'critical' → отправить уведомление"
+  - "Если event_code связан с финансовыми операциями → триггер для проверки"
+  - "Обновить агрегированные данные для Compliance"
+  - "Записать в отдельный архив для налоговой"
+  - "Обновить дашборд аудита"
+
+example:
+  event_id: "da0e8400-e29b-41d4-a716-446655440000"
+  event_code: "DOCUMENT_POSTED"
+  user_id: "550e8400-e29b-41d4-a716-446655440001"
+  tenant_id: "660e8400-e29b-41d4-a716-446655440000"
+  enterprise_id: "aa0e8400-e29b-41d4-a716-446655440000"
+  severity: "audit_required"
+  timestamp: "2025-01-15T14:30:00Z"
+  ip_address: "192.168.1.100"
+  source: "web"

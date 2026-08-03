@@ -1,0 +1,130 @@
+# ============================================
+# Команда: Сменить тарифный план
+# ============================================
+name: "UpgradePlan"
+description: "Смена тарифного плана (апгрейд/даунгрейд)"
+version: "1.0.0"
+
+inputs:
+  - subscription_id:
+      type: uuid
+      required: true
+      description: "ID подписки"
+
+  - new_plan_id:
+      type: uuid
+      required: true
+      description: "ID нового тарифного плана"
+
+  - user_id:
+      type: uuid
+      required: true
+      description: "ID пользователя"
+
+  - effective_immediately:
+      type: boolean
+      default: true
+      description: "Применить немедленно (true) или с следующего периода (false)"
+
+  - prorated:
+      type: boolean
+      default: true
+      description: "Пропорциональный пересчет"
+
+pre_conditions:
+  - "Подписка существует и активна"
+  - "Новый тарифный план существует и активен"
+  - "У пользователя есть право 'subscriptions.upgrade'"
+  - "Новый план отличается от текущего"
+
+post_conditions:
+  - "Тарифный план изменен"
+  - "Создан новый счет (при необходимости)"
+  - "Запись в Audit Log"
+
+process:
+  steps:
+    - name: "ValidateSubscription"
+      check: "subscription.exists AND subscription.status == 'active'"
+      on_fail: "Ошибка: подписка не существует или неактивна"
+
+    - name: "ValidateNewPlan"
+      check: "plan.exists AND plan.is_active == true"
+      on_fail: "Ошибка: тарифный план не существует"
+
+    - name: "CheckPlanChange"
+      check: "subscription.plan_id != new_plan_id"
+      on_fail: "Ошибка: выбран тот же тарифный план"
+
+    - name: "CalculatePriceDifference"
+      action: |
+        IF effective_immediately:
+          IF prorated:
+            diff = new_plan.price - old_plan.price * (remaining_days / period_days)
+          ELSE:
+            diff = new_plan.price - old_plan.price
+
+    - name: "UpdateSubscription"
+      action: |
+        IF effective_immediately:
+          UPDATE subscriptions SET
+            plan_id = '{new_plan_id}',
+            current_period_start = now(),
+            current_period_end = now() + interval '1 month',
+            updated_at = now()
+          WHERE id = '{subscription_id}'
+        ELSE:
+          UPDATE subscriptions SET
+            next_plan_id = '{new_plan_id}',
+            updated_at = now()
+          WHERE id = '{subscription_id}'
+
+    - name: "CreateAdjustmentInvoice"
+      condition: "diff > 0"
+      action: "Создать счет на доплату"
+
+    - name: "CreateCreditNote"
+      condition: "diff < 0"
+      action: "Создать кредит-ноту"
+
+    - name: "UpdateProvider"
+      action: "Обновить подписку в платежной системе"
+
+    - name: "LogAudit"
+      action: "INSERT INTO audit_log"
+
+outputs:
+  - status:
+      type: string
+      enum: ["success", "failed"]
+
+  - subscription_id:
+      type: uuid
+
+  - new_plan_name:
+      type: string
+
+  - price_difference:
+      type: numeric
+
+  - adjustment_invoice_id:
+      type: uuid
+      nullable: true
+
+  - errors:
+      type: array
+      nullable: true
+
+events:
+  on_success:
+    - SubscriptionUpgraded.yaml
+  on_failure:
+    - SubscriptionUpgradeFailed.yaml
+
+example:
+  inputs:
+    subscription_id: "990e8400-e29b-41d4-a716-446655440000"
+    new_plan_id: "880e8400-e29b-41d4-a716-446655440001"
+    user_id: "550e8400-e29b-41d4-a716-446655440001"
+    effective_immediately: true
+    prorated: true

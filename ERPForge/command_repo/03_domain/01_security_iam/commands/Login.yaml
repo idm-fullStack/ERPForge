@@ -1,0 +1,148 @@
+# ============================================
+# Команда: Вход пользователя
+# ============================================
+name: "Login"
+description: "Аутентификация пользователя в системе"
+version: "1.0.0"
+
+inputs:
+  - email:
+      type: string
+      required: true
+      format: email
+      max_length: 255
+      description: "Email пользователя"
+      example: "ivan@company.ru"
+
+  - password:
+      type: string
+      required: true
+      max_length: 255
+      description: "Пароль пользователя"
+      example: "********"
+
+  - ip_address:
+      type: string
+      required: true
+      description: "IP-адрес пользователя"
+      example: "192.168.1.100"
+
+  - user_agent:
+      type: string
+      required: true
+      description: "User-Agent браузера"
+      example: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+
+  - remember_me:
+      type: boolean
+      default: false
+      description: "Запомнить пользователя"
+
+  - tenant_id:
+      type: uuid
+      nullable: true
+      description: "ID клиента (если известен)"
+
+pre_conditions:
+  - "Пользователь должен существовать"
+  - "Пользователь должен быть активным (is_active = true)"
+  - "Пользователь не должен быть заблокирован (is_locked = false)"
+
+post_conditions:
+  - "Создана JWT-сессия"
+  - "Обновлен last_login_at"
+  - "Сброшены failed_login_attempts"
+  - "Создана запись в Audit Log"
+
+process:
+  steps:
+    - name: "FindUser"
+      action: "SELECT * FROM users WHERE email = '{email}'"
+      on_fail: "Ошибка: пользователь не найден"
+
+    - name: "CheckLockStatus"
+      check: "user.is_locked == false"
+      on_fail: "Ошибка: учетная запись заблокирована"
+
+    - name: "CheckPassword"
+      check: "password_hash == hash(password, user.salt)"
+      on_fail: "Ошибка: неверный пароль"
+
+    - name: "Check2FA"
+      condition: "user.two_factor_enabled == true"
+      action: "Запросить 2FA код"
+
+    - name: "Validate2FA"
+      condition: "two_factor_enabled == true"
+      check: "totp_secret == verify_2fa(input.two_factor_code)"
+      on_fail: "Ошибка: неверный 2FA код"
+
+    - name: "UpdateLoginStats"
+      action: |
+        UPDATE users SET
+          last_login_at = now(),
+          last_login_ip = '{ip_address}',
+          failed_login_attempts = 0,
+          updated_at = now()
+        WHERE id = '{user.id}'
+
+    - name: "GenerateTokens"
+      action: |
+        access_token = jwt.generate(expires_in=3600)
+        refresh_token = jwt.generate(expires_in=604800)
+
+    - name: "CreateSession"
+      action: "INSERT INTO sessions (user_id, access_token, refresh_token, expires_at, ip_address) VALUES (...)"
+
+    - name: "LogAudit"
+      action: "INSERT INTO audit_log (action, user_id, details) VALUES ('USER_LOGIN', '{user.id}', '{details}')"
+
+outputs:
+  - status:
+      type: string
+      enum: ["success", "failed"]
+
+  - access_token:
+      type: string
+      description: "JWT токен доступа"
+
+  - refresh_token:
+      type: string
+      description: "JWT токен обновления"
+
+  - expires_in:
+      type: integer
+      description: "Время жизни токена (секунды)"
+
+  - user:
+      type: object
+      properties:
+        id: { type: uuid }
+        email: { type: string }
+        first_name: { type: string }
+        last_name: { type: string }
+        display_name: { type: string }
+        role_ids: { type: array }
+        tenant_id: { type: uuid }
+        permissions: { type: array }
+
+  - requires_2fa:
+      type: boolean
+
+  - errors:
+      type: array
+      nullable: true
+
+events:
+  on_success:
+    - UserLoggedIn.yaml
+  on_failure:
+    - LoginFailed.yaml
+
+example:
+  inputs:
+    email: "ivan@company.ru"
+    password: "securePassword123"
+    ip_address: "192.168.1.100"
+    user_agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+    remember_me: false

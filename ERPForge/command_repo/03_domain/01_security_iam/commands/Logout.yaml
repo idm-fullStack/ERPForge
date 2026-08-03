@@ -1,0 +1,49 @@
+# ============================================
+# Команда: Выход пользователя
+# ============================================
+name: "Logout"
+description: "Завершение сессии пользователя"
+version: "1.0.0"
+
+inputs:
+  - user_id:
+      type: uuid
+      required: true
+      description: "ID пользователя"
+
+  - access_token:
+      type: string
+      required: true
+      description: "Токен доступа для инвалидации"
+
+pre_conditions:
+  - "Пользователь должен существовать"
+  - "Сессия должна быть активной"
+
+post_conditions:
+  - "Сессия завершена (токен инвалидирован)"
+  - "Создана запись в Audit Log"
+
+process:
+  steps:
+    - name: "InvalidateToken"
+      action: "DELETE FROM sessions WHERE access_token = '{access_token}'"
+
+    - name: "LogAudit"
+      action: "INSERT INTO audit_log (action, user_id) VALUES ('USER_LOGOUT', '{user_id}')"
+
+outputs:
+  - status:
+      type: string
+      enum: ["success", "failed"]
+
+events:
+  on_success:
+    - UserLoggedOut.yaml
+  on_failure:
+    - LogoutFailed.yaml
+
+example:
+  inputs:
+    user_id: "550e8400-e29b-41d4-a716-446655440001"
+    access_token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."

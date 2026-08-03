@@ -1,0 +1,33 @@
+# ============================================
+# Событие: Пользователь вышел
+# ============================================
+name: "UserLoggedOut"
+description: "Пользователь завершил сессию"
+version: "1.0.0"
+
+fields:
+  - event_id:
+      type: uuid
+      required: true
+
+  - user_id:
+      type: uuid
+      required: true
+
+  - session_id:
+      type: uuid
+      required: true
+
+  - logout_at:
+      type: datetime
+      required: true
+
+reactions:
+  - "Запись в Audit Log"
+  - "Обновить дашборд активности"
+
+example:
+  event_id: "a11e8400-e29b-41d4-a716-446655440000"
+  user_id: "550e8400-e29b-41d4-a716-446655440001"
+  session_id: "sess_12345"
+  logout_at: "2025-01-15T18:00:00Z"

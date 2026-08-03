@@ -1,0 +1,224 @@
+# ============================================
+# Запрос: Отчет по аудиту для налоговой
+# ============================================
+name: "GetAuditReport"
+description: "Формирование отчета по аудиту для налоговой инспекции"
+version: "1.0.0"
+
+inputs:
+  - tenant_id:
+      type: uuid
+      required: true
+      description: "ID клиента"
+
+  - enterprise_id:
+      type: uuid
+      required: true
+      description: "ID юридического лица"
+
+  - year:
+      type: integer
+      required: true
+      min: 2020
+      max: 2050
+      description: "Год отчета"
+      example: 2025
+
+  - quarter:
+      type: integer
+      nullable: true
+      min: 1
+      max: 4
+      description: "Квартал (если не указан, то за весь год)"
+
+  - report_type:
+      type: string
+      required: true
+      enum: ["full", "financial", "tax", "users", "system", "compliance"]
+      default: "full"
+      description: "Тип отчета"
+
+  - include_details:
+      type: boolean
+      default: true
+      description: "Включить детализацию"
+
+  - format:
+      type: string
+      enum: ["json", "csv", "pdf", "xlsx"]
+      default: "json"
+      description: "Формат вывода"
+
+outputs:
+  - report:
+      type: object
+      description: "Отчет по аудиту"
+      properties:
+        meta:
+          type: object
+          properties:
+            tenant_id: { type: uuid }
+            tenant_name: { type: string }
+            enterprise_id: { type: uuid }
+            enterprise_name: { type: string }
+            inn: { type: string }
+            report_type: { type: string }
+            period: { type: string }
+            generated_at: { type: datetime }
+            generated_by: { type: uuid }
+
+        summary:
+          type: object
+          description: "Сводная информация"
+          properties:
+            total_events: { type: integer }
+            events_by_category:
+              type: object
+              properties:
+                authentication: { type: integer }
+                authorization: { type: integer }
+                data_modification: { type: integer }
+                financial: { type: integer }
+                compliance: { type: integer }
+                system: { type: integer }
+            events_by_severity:
+              type: object
+              properties:
+                info: { type: integer }
+                warning: { type: integer }
+                error: { type: integer }
+                critical: { type: integer }
+                audit_required: { type: integer }
+            unique_users: { type: integer }
+            events_by_user:
+              type: array
+              items:
+                type: object
+                properties:
+                  user_id: { type: uuid }
+                  user_name: { type: string }
+                  count: { type: integer }
+            events_by_month:
+              type: array
+              items:
+                type: object
+                properties:
+                  month: { type: string }
+                  count: { type: integer }
+
+        financial_events:
+          type: array
+          description: "Финансовые события (для налоговой)"
+          items:
+            type: object
+            properties:
+              date: { type: datetime }
+              event: { type: string }
+              user: { type: string }
+              document_id: { type: uuid }
+              document_type: { type: string }
+              amount: { type: numeric }
+              details: { type: object }
+
+        user_activity:
+          type: array
+          description: "Активность пользователей"
+          items:
+            type: object
+            properties:
+              user_id: { type: uuid }
+              user_name: { type: string }
+              first_action: { type: datetime }
+              last_action: { type: datetime }
+              total_actions: { type: integer }
+              unique_ips: { type: integer }
+
+        suspicious_events:
+          type: array
+          description: "Подозрительные события"
+          items:
+            type: object
+            properties:
+              event_id: { type: uuid }
+              event_code: { type: string }
+              user: { type: string }
+              timestamp: { type: datetime }
+              reason: { type: string }
+              details: { type: object }
+
+security:
+  - "Доступ только для пользователей с ролью 'admin' или 'auditor'"
+  - "Доступ только к своему tenant_id"
+  - "Логирование запроса в аудит"
+  - "Отчет подписывается электронной подписью"
+
+example_response:
+  report:
+    meta:
+      tenant_id: "660e8400-e29b-41d4-a716-446655440000"
+      tenant_name: "ООО Ромашка"
+      enterprise_id: "aa0e8400-e29b-41d4-a716-446655440000"
+      enterprise_name: "ООО Ромашка"
+      inn: "123456789012"
+      report_type: "full"
+      period: "2025 Q1"
+      generated_at: "2025-03-31T23:59:59Z"
+      generated_by: "550e8400-e29b-41d4-a716-446655440001"
+
+    summary:
+      total_events: 1247
+      events_by_category:
+        authentication: 342
+        authorization: 89
+        data_modification: 234
+        financial: 456
+        compliance: 126
+        system: 0
+      events_by_severity:
+        info: 567
+        warning: 234
+        error: 12
+        critical: 8
+        audit_required: 426
+      unique_users: 12
+      events_by_user:
+        - user_id: "550e8400-e29b-41d4-a716-446655440001"
+          user_name: "Иван Петров"
+          count: 423
+      events_by_month:
+        - month: "2025-01"
+          count: 412
+        - month: "2025-02"
+          count: 415
+        - month: "2025-03"
+          count: 420
+
+    financial_events:
+      - date: "2025-01-15T14:30:00Z"
+        event: "Проведение документа"
+        user: "Иван Петров"
+        document_id: "ee0e8400-e29b-41d4-a716-446655440000"
+        document_type: "SalesInvoice"
+        amount: 159800.00
+        details:
+          counterparty: "ООО Ромашка"
+          items: 2
+
+    user_activity:
+      - user_id: "550e8400-e29b-41d4-a716-446655440001"
+        user_name: "Иван Петров"
+        first_action: "2025-01-02T09:00:00Z"
+        last_action: "2025-03-31T18:30:00Z"
+        total_actions: 423
+        unique_ips: 3
+
+    suspicious_events:
+      - event_id: "da0e8400-e29b-41d4-a716-446655440999"
+        event_code: "USER_LOGIN_FAILED"
+        user: "Неизвестный"
+        timestamp: "2025-03-15T02:30:00Z"
+        reason: "5 неудачных попыток входа с одного IP"
+        details:
+          email: "unknown@company.ru"
+          ip_address: "185.220.101.23"
+          attempts: 5

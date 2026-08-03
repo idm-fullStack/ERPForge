@@ -1,0 +1,92 @@
+# ============================================
+# Команда: Переключение между клиентами
+# ============================================
+name: "SetTenant"
+description: "Переключение текущего клиента для пользователя"
+version: "1.0.0"
+
+inputs:
+  - user_id:
+      type: uuid
+      required: true
+      description: "ID пользователя"
+
+  - tenant_id:
+      type: uuid
+      required: true
+      description: "ID клиента"
+
+  - access_token:
+      type: string
+      required: true
+      description: "Токен доступа для обновления"
+
+pre_conditions:
+  - "Пользователь существует"
+  - "Клиент существует и активен"
+  - "Пользователь имеет доступ к клиенту"
+
+post_conditions:
+  - "Создан новый токен для клиента"
+  - "Старый токен инвалидирован"
+  - "Создана запись в Audit Log"
+
+process:
+  steps:
+    - name: "ValidateTenant"
+      check: "tenant.exists AND tenant.status == 'active'"
+      on_fail: "Ошибка: клиент не существует или неактивен"
+
+    - name: "CheckAccess"
+      check: "user.tenant_ids.contains('{tenant_id}') OR user.has_role('super_admin')"
+      on_fail: "Ошибка: пользователь не имеет доступа к клиенту"
+
+    - name: "InvalidateOldToken"
+      action: "DELETE FROM sessions WHERE access_token = '{access_token}'"
+
+    - name: "GenerateNewToken"
+      action: "jwt.generate(tenant_id = '{tenant_id}')"
+
+    - name: "UpdateSession"
+      action: |
+        INSERT INTO sessions (
+          user_id, tenant_id, access_token, refresh_token,
+          expires_at, created_at
+        ) VALUES (...)
+
+    - name: "LogAudit"
+      action: "INSERT INTO audit_log (action, user_id, tenant_id) VALUES ('TENANT_SWITCHED', '{user_id}', '{tenant_id}')"
+
+outputs:
+  - status:
+      type: string
+      enum: ["success", "failed"]
+
+  - access_token:
+      type: string
+      description: "Новый токен для клиента"
+
+  - refresh_token:
+      type: string
+
+  - expires_in:
+      type: integer
+
+  - tenant:
+      type: object
+      properties:
+        id: { type: uuid }
+        name: { type: string }
+        subdomain: { type: string }
+
+events:
+  on_success:
+    - TenantSwitched.yaml
+  on_failure:
+    - TenantSwitchFailed.yaml
+
+example:
+  inputs:
+    user_id: "550e8400-e29b-41d4-a716-446655440001"
+    tenant_id: "660e8400-e29b-41d4-a716-446655440001"
+    access_token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."

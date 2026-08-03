@@ -1,0 +1,280 @@
+# ============================================
+# Справочник: Типы событий аудита
+# ============================================
+version: "2.0.0"
+type: registry
+name: "audit_events"
+description: "Справочник типов событий для логирования аудита"
+
+fields:
+  - id:
+      type: uuid
+      primary: true
+      description: "Уникальный идентификатор типа события"
+
+  - code:
+      type: string
+      required: true
+      unique: true
+      max_length: 50
+      description: "Кодовое обозначение события"
+      example: "USER_LOGIN"
+
+  - name:
+      type: string
+      required: true
+      max_length: 200
+      description: "Название события"
+      example: "Вход пользователя"
+
+  - category:
+      type: string
+      required: true
+      indexed: true
+      enum: ["authentication", "authorization", "data_access", "data_modification", "data_export", "system", "financial", "compliance"]
+      description: "Категория события"
+      example: "authentication"
+
+  - severity:
+      type: string
+      required: true
+      enum: ["info", "warning", "error", "critical", "audit_required"]
+      default: "info"
+      description: "Уровень важности"
+      example: "info"
+
+  - description:
+      type: string
+      max_length: 500
+      description: "Описание события"
+
+  - required_fields:
+      type: array
+      description: "Список обязательных полей для события"
+      items: { type: string }
+      example: ["user_id", "ip_address", "timestamp"]
+
+  - retention_days:
+      type: integer
+      default: 1825
+      description: "Срок хранения в днях (по умолчанию 5 лет)"
+      example: 1825
+
+  - is_active:
+      type: boolean
+      default: true
+
+  - created_at:
+      type: datetime
+      default: "now()"
+
+examples:
+  - id: "ca0e8400-e29b-41d4-a716-446655440000"
+    code: "USER_LOGIN"
+    name: "Вход пользователя"
+    category: "authentication"
+    severity: "info"
+    description: "Пользователь успешно вошел в систему"
+    required_fields: ["user_id", "ip_address", "timestamp"]
+    retention_days: 365
+    is_active: true
+
+  - id: "ca0e8400-e29b-41d4-a716-446655440001"
+    code: "USER_LOGOUT"
+    name: "Выход пользователя"
+    category: "authentication"
+    severity: "info"
+    description: "Пользователь вышел из системы"
+    required_fields: ["user_id", "ip_address", "timestamp"]
+    retention_days: 365
+    is_active: true
+
+  - id: "ca0e8400-e29b-41d4-a716-446655440002"
+    code: "USER_LOGIN_FAILED"
+    name: "Неудачная попытка входа"
+    category: "authentication"
+    severity: "warning"
+    description: "Неудачная попытка входа в систему"
+    required_fields: ["email", "ip_address", "timestamp"]
+    retention_days: 365
+    is_active: true
+
+  - id: "ca0e8400-e29b-41d4-a716-446655440003"
+    code: "DOCUMENT_POSTED"
+    name: "Проведение документа"
+    category: "financial"
+    severity: "audit_required"
+    description: "Документ проведен в учете"
+    required_fields: ["user_id", "document_id", "document_type", "amount", "timestamp"]
+    retention_days: 1825
+    is_active: true
+
+  - id: "ca0e8400-e29b-41d4-a716-446655440004"
+    code: "DOCUMENT_CANCELED"
+    name: "Отмена документа"
+    category: "financial"
+    severity: "audit_required"
+    description: "Проведение документа отменено"
+    required_fields: ["user_id", "document_id", "document_type", "reason", "timestamp"]
+    retention_days: 1825
+    is_active: true
+
+  - id: "ca0e8400-e29b-41d4-a716-446655440005"
+    code: "ENTERPRISE_CREATED"
+    name: "Создание юрлица"
+    category: "data_modification"
+    severity: "audit_required"
+    description: "Зарегистрировано новое юридическое лицо"
+    required_fields: ["user_id", "enterprise_id", "inn", "timestamp"]
+    retention_days: 1825
+    is_active: true
+
+  - id: "ca0e8400-e29b-41d4-a716-446655440006"
+    code: "TAX_POLICY_CHANGED"
+    name: "Смена налоговой системы"
+    category: "financial"
+    severity: "critical"
+    description: "Изменена система налогообложения"
+    required_fields: ["user_id", "enterprise_id", "old_system", "new_system", "timestamp"]
+    retention_days: 1825
+    is_active: true
+
+  - id: "ca0e8400-e29b-41d4-a716-446655440007"
+    code: "DATA_EXPORT"
+    name: "Экспорт данных"
+    category: "data_export"
+    severity: "warning"
+    description: "Выполнен экспорт данных пользователем"
+    required_fields: ["user_id", "export_type", "record_count", "timestamp"]
+    retention_days: 730
+    is_active: true
+
+  - id: "ca0e8400-e29b-41d4-a716-446655440008"
+    code: "PAYMENT_PROCESSED"
+    name: "Обработка платежа"
+    category: "financial"
+    severity: "critical"
+    description: "Выполнен платеж по счету"
+    required_fields: ["user_id", "invoice_id", "amount", "timestamp"]
+    retention_days: 1825
+    is_active: true
+
+  - id: "ca0e8400-e29b-41d4-a716-446655440009"
+    code: "USER_ROLE_CHANGED"
+    name: "Изменение роли пользователя"
+    category: "authorization"
+    severity: "warning"
+    description: "Изменена роль пользователя"
+    required_fields: ["user_id", "target_user_id", "old_role", "new_role", "timestamp"]
+    retention_days: 730
+    is_active: true
+
+  - id: "ca0e8400-e29b-41d4-a716-446655440010"
+    code: "SYSTEM_ERROR"
+    name: "Системная ошибка"
+    category: "system"
+    severity: "error"
+    description: "Произошла ошибка в системе"
+    required_fields: ["error_code", "error_message", "timestamp"]
+    retention_days: 365
+    is_active: true
+
+  - id: "ca0e8400-e29b-41d4-a716-446655440011"
+    code: "INTEGRATION_SYNC"
+    name: "Синхронизация с интеграцией"
+    category: "system"
+    severity: "info"
+    description: "Выполнена синхронизация с внешней системой"
+    required_fields: ["integration_type", "status", "records_synced", "timestamp"]
+    retention_days: 365
+    is_active: true
+
+  - id: "ca0e8400-e29b-41d4-a716-446655440012"
+    code: "PERMISSION_CHANGED"
+    name: "Изменение разрешений"
+    category: "authorization"
+    severity: "warning"
+    description: "Изменены права доступа пользователя"
+    required_fields: ["user_id", "target_user_id", "old_permissions", "new_permissions", "timestamp"]
+    retention_days: 730
+    is_active: true
+
+  - id: "ca0e8400-e29b-41d4-a716-446655440013"
+    code: "EMPLOYEE_HIRED"
+    name: "Прием сотрудника"
+    category: "data_modification"
+    severity: "info"
+    description: "Новый сотрудник принят на работу"
+    required_fields: ["user_id", "employee_id", "position", "department", "timestamp"]
+    retention_days: 1825
+    is_active: true
+
+  - id: "ca0e8400-e29b-41d4-a716-446655440014"
+    code: "EMPLOYEE_FIRED"
+    name: "Увольнение сотрудника"
+    category: "data_modification"
+    severity: "warning"
+    description: "Сотрудник уволен"
+    required_fields: ["user_id", "employee_id", "reason", "timestamp"]
+    retention_days: 1825
+    is_active: true
+
+  - id: "ca0e8400-e29b-41d4-a716-446655440015"
+    code: "SALARY_CALCULATED"
+    name: "Расчет зарплаты"
+    category: "financial"
+    severity: "audit_required"
+    description: "Выполнен расчет заработной платы"
+    required_fields: ["user_id", "employee_id", "amount", "period", "timestamp"]
+    retention_days: 1825
+    is_active: true
+
+  - id: "ca0e8400-e29b-41d4-a716-446655440016"
+    code: "LEDGER_ENTRY"
+    name: "Проводка создана"
+    category: "financial"
+    severity: "audit_required"
+    description: "Создана бухгалтерская проводка"
+    required_fields: ["user_id", "document_id", "account_debit", "account_credit", "amount", "timestamp"]
+    retention_days: 1825
+    is_active: true
+
+  - id: "ca0e8400-e29b-41d4-a716-446655440017"
+    code: "TAX_DECLARATION_SUBMITTED"
+    name: "Подача налоговой декларации"
+    category: "compliance"
+    severity: "critical"
+    description: "Подана налоговая декларация"
+    required_fields: ["user_id", "enterprise_id", "declaration_type", "period", "timestamp"]
+    retention_days: 1825
+    is_active: true
+
+  - id: "ca0e8400-e29b-41d4-a716-446655440018"
+    code: "BANK_SYNC_COMPLETED"
+    name: "Синхронизация с банком"
+    category: "system"
+    severity: "info"
+    description: "Синхронизация с банком завершена"
+    required_fields: ["user_id", "account_number", "transactions_count", "status", "timestamp"]
+    retention_days: 365
+    is_active: true
+
+  - id: "ca0e8400-e29b-41d4-a716-446655440019"
+    code: "REPORT_GENERATED"
+    name: "Генерация отчета"
+    category: "data_export"
+    severity: "info"
+    description: "Сгенерирован отчет"
+    required_fields: ["user_id", "report_type", "format", "timestamp"]
+    retention_days: 365
+    is_active: true
+
+  - id: "ca0e8400-e29b-41d4-a716-446655440020"
+    code: "AI_QUERY"
+    name: "Запрос к AI"
+    category: "system"
+    severity: "info"
+    description: "Выполнен запрос к AI-ассистенту"
+    required_fields: ["user_id", "ai_type", "tokens_used", "timestamp"]
+    retention_days: 365
+    is_active: true

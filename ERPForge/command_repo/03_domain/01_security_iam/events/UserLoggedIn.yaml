@@ -1,0 +1,59 @@
+# ============================================
+# Событие: Пользователь вошел
+# ============================================
+name: "UserLoggedIn"
+description: "Пользователь успешно аутентифицирован"
+version: "1.0.0"
+
+fields:
+  - event_id:
+      type: uuid
+      required: true
+
+  - user_id:
+      type: uuid
+      required: true
+
+  - tenant_id:
+      type: uuid
+      nullable: true
+
+  - email:
+      type: string
+      required: true
+
+  - ip_address:
+      type: string
+      required: true
+
+  - user_agent:
+      type: string
+      required: true
+
+  - session_id:
+      type: uuid
+      required: true
+
+  - login_at:
+      type: datetime
+      required: true
+
+  - requires_2fa:
+      type: boolean
+      default: false
+
+reactions:
+  - "Обновить дашборд активности"
+  - "Запись в Audit Log"
+  - "Отправить уведомление о новом входе (если включено)"
+
+example:
+  event_id: "a10e8400-e29b-41d4-a716-446655440000"
+  user_id: "550e8400-e29b-41d4-a716-446655440001"
+  tenant_id: "660e8400-e29b-41d4-a716-446655440000"
+  email: "ivan@company.ru"
+  ip_address: "192.168.1.100"
+  user_agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+  session_id: "sess_12345"
+  login_at: "2025-01-15T09:00:00Z"
+  requires_2fa: false

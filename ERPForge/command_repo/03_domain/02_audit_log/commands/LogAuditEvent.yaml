@@ -1,0 +1,174 @@
+# ============================================
+# Команда: Записать событие аудита
+# ============================================
+name: "LogAuditEvent"
+description: "Запись события в лог аудита"
+version: "1.0.0"
+
+inputs:
+  - event_code:
+      type: string
+      required: true
+      max_length: 50
+      description: "Код события (из справочника audit_events)"
+      example: "DOCUMENT_POSTED"
+
+  - user_id:
+      type: uuid
+      required: true
+      description: "ID пользователя, выполнившего действие"
+      example: "550e8400-e29b-41d4-a716-446655440001"
+
+  - tenant_id:
+      type: uuid
+      required: true
+      description: "ID клиента"
+      example: "660e8400-e29b-41d4-a716-446655440000"
+
+  - enterprise_id:
+      type: uuid
+      nullable: true
+      description: "ID юридического лица (если применимо)"
+      example: "aa0e8400-e29b-41d4-a716-446655440000"
+
+  - ip_address:
+      type: string
+      required: true
+      description: "IP-адрес пользователя"
+      example: "192.168.1.100"
+
+  - user_agent:
+      type: string
+      nullable: true
+      description: "User-Agent браузера"
+      example: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+
+  - details:
+      type: object
+      required: true
+      description: "Детали события (зависят от типа)"
+      properties: {}
+      example: |
+        document_id: "ee0e8400-e29b-41d4-a716-446655440000"
+        document_type: "SalesInvoice"
+        amount: 159800.00
+        counterparty: "ООО Ромашка"
+
+  - session_id:
+      type: string
+      nullable: true
+      description: "ID сессии пользователя"
+
+  - request_id:
+      type: string
+      nullable: true
+      description: "ID HTTP-запроса для трейсинга"
+
+  - metadata:
+      type: object
+      nullable: true
+      description: "Дополнительная мета-информация"
+      properties: {}
+
+  - source:
+      type: string
+      nullable: true
+      enum: ["web", "api", "mobile", "system", "integration"]
+      default: "web"
+      description: "Источник события"
+
+pre_conditions:
+  - "Событие должно существовать в справочнике audit_events"
+  - "Все обязательные поля для события должны быть заполнены"
+  - "У пользователя должно быть право 'audit.write' (если не системное событие)"
+
+post_conditions:
+  - "Событие записано в лог аудита"
+  - "Если событие критическое → отправлено уведомление"
+
+process:
+  steps:
+    - name: "ValidateEventType"
+      check: "SELECT * FROM audit_events WHERE code = '{event_code}' AND is_active = true"
+      on_fail: "Ошибка: неизвестный или неактивный тип события"
+
+    - name: "ValidateRequiredFields"
+      check: "Для каждого required_fields проверяем наличие в details"
+      on_fail: "Ошибка: отсутствует обязательное поле {field}"
+
+    - name: "DetermineSeverity"
+      action: "Получить severity из audit_events"
+
+    - name: "GenerateEventId"
+      action: "generates UUID for event_id"
+
+    - name: "InsertAuditLog"
+      action: |
+        INSERT INTO audit_log (
+          id, event_code, user_id, tenant_id, enterprise_id,
+          ip_address, user_agent, details, severity,
+          session_id, request_id, metadata, source, created_at
+        ) VALUES (
+          '{event_id}', '{event_code}', '{user_id}', '{tenant_id}', '{enterprise_id}',
+          '{ip_address}', '{user_agent}', '{details}', '{severity}',
+          '{session_id}', '{request_id}', '{metadata}', '{source}', now()
+        )
+
+    - name: "EnforceRetention"
+      condition: "retention_days exceeded"
+      action: "Автоматическая очистка старых записей"
+
+    - name: "TriggerAlert"
+      condition: "severity == 'critical'"
+      action: "Отправить уведомление администратору"
+
+    - name: "TriggerWebhook"
+      condition: "severity == 'critical' OR severity == 'audit_required'"
+      action: "Отправить webhook для внешних систем"
+
+outputs:
+  - status:
+      type: string
+      enum: ["success", "failed"]
+
+  - event_id:
+      type: uuid
+      description: "ID записанного события"
+
+  - errors:
+      type: array
+      nullable: true
+
+events:
+  on_success:
+    - AuditLogged.yaml
+  on_failure:
+    - AuditLogFailed.yaml
+
+examples:
+  - event_code: "DOCUMENT_POSTED"
+    user_id: "550e8400-e29b-41d4-a716-446655440001"
+    tenant_id: "660e8400-e29b-41d4-a716-446655440000"
+    enterprise_id: "aa0e8400-e29b-41d4-a716-446655440000"
+    ip_address: "192.168.1.100"
+    user_agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+    details:
+      document_id: "ee0e8400-e29b-41d4-a716-446655440000"
+      document_type: "SalesInvoice"
+      amount: 159800.00
+      counterparty: "ООО Ромашка"
+    session_id: "sess_12345"
+    request_id: "req_67890"
+    metadata:
+      source: "web_client"
+      version: "1.0.0"
+    source: "web"
+
+  - event_code: "USER_LOGIN_FAILED"
+    user_id: null
+    tenant_id: "660e8400-e29b-41d4-a716-446655440000"
+    ip_address: "192.168.1.100"
+    details:
+      email: "unknown@company.ru"
+      reason: "invalid_password"
+    source: "api"

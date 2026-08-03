@@ -1,0 +1,127 @@
+# ============================================
+# Команда: Обработка платежа
+# ============================================
+name: "ProcessPayment"
+description: "Обработка платежа по счету"
+version: "1.0.0"
+
+inputs:
+  - invoice_id:
+      type: uuid
+      required: true
+      description: "ID счета для оплаты"
+
+  - user_id:
+      type: uuid
+      required: true
+      description: "ID пользователя, обрабатывающего платеж"
+
+  - payment_method:
+      type: string
+      required: true
+      enum: ["card", "invoice", "crypto", "prepaid"]
+      description: "Способ оплаты"
+
+  - provider_transaction_id:
+      type: string
+      nullable: true
+      description: "ID транзакции в платежной системе"
+
+  - payment_token:
+      type: string
+      nullable: true
+      description: "Токен платежа (для карт)"
+
+  - webhook_data:
+      type: object
+      nullable: true
+      description: "Данные от webhook платежной системы"
+
+pre_conditions:
+  - "Счет существует"
+  - "Счет в статусе 'sent' или 'draft'"
+  - "У пользователя есть право 'payments.process'"
+
+post_conditions:
+  - "Платеж обработан"
+  - "Статус счета обновлен"
+  - "Статус подписки обновлен"
+
+process:
+  steps:
+    - name: "ValidateInvoice"
+      check: "invoice.exists AND invoice.status IN ('draft', 'sent')"
+      on_fail: "Ошибка: счет не существует или уже оплачен"
+
+    - name: "CheckProvider"
+      action: "Определить платежного провайдера из subscription"
+
+    - name: "ProcessWithProvider"
+      action: |
+        IF provider == 'stripe':
+          stripe_payment_intent = stripe.PaymentIntent.create(...)
+        IF provider == 'yookassa':
+          yookassa_payment = yookassa.Payment.create(...)
+
+    - name: "UpdateInvoice"
+      action: |
+        UPDATE invoices SET
+          status = CASE WHEN '{payment_success}' THEN 'paid' ELSE 'failed' END,
+          paid_at = CASE WHEN '{payment_success}' THEN now() ELSE NULL END,
+          provider_transaction_id = '{provider_transaction_id}',
+          updated_at = now()
+        WHERE id = '{invoice_id}'
+
+    - name: "UpdateSubscription"
+      condition: "payment_success == true"
+      action: |
+        UPDATE subscriptions SET
+          status = 'active',
+          current_period_start = now(),
+          current_period_end = now() + interval '{billing_period}',
+          updated_at = now()
+        WHERE id = '{subscription_id}'
+
+    - name: "CreateReceipt"
+      condition: "payment_success == true"
+      action: "Создать чек/квитанцию"
+
+    - name: "LogAudit"
+      action: "INSERT INTO audit_log"
+
+outputs:
+  - status:
+      type: string
+      enum: ["success", "failed", "pending"]
+
+  - payment_id:
+      type: uuid
+      description: "ID платежа"
+
+  - invoice_id:
+      type: uuid
+
+  - transaction_id:
+      type: string
+      description: "ID транзакции в платежной системе"
+
+  - payment_status:
+      type: string
+      enum: ["succeeded", "failed", "pending"]
+
+  - errors:
+      type: array
+      nullable: true
+
+events:
+  on_success:
+    - PaymentSuccess.yaml
+  on_failure:
+    - PaymentFailed.yaml
+
+example:
+  inputs:
+    invoice_id: "ab0e8400-e29b-41d4-a716-446655440000"
+    user_id: "550e8400-e29b-41d4-a716-446655440001"
+    payment_method: "card"
+    provider_transaction_id: "txn_123456789"

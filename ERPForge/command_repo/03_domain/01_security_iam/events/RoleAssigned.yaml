@@ -1,0 +1,49 @@
+# ============================================
+# Событие: Роль назначена
+# ============================================
+name: "RoleAssigned"
+description: "Пользователю назначена роль"
+version: "1.0.0"
+
+fields:
+  - event_id:
+      type: uuid
+      required: true
+
+  - user_id:
+      type: uuid
+      required: true
+
+  - role_id:
+      type: uuid
+      required: true
+
+  - role_name:
+      type: string
+      required: true
+
+  - assigned_by:
+      type: uuid
+      required: true
+
+  - assigned_at:
+      type: datetime
+      required: true
+
+  - reason:
+      type: string
+      nullable: true
+
+reactions:
+  - "Обновить кэш прав пользователя"
+  - "Запись в Audit Log"
+  - "Отправить уведомление пользователю"
+
+example:
+  event_id: "a12e8400-e29b-41d4-a716-446655440000"
+  user_id: "550e8400-e29b-41d4-a716-446655440001"
+  role_id: "770e8400-e29b-41d4-a716-446655440002"
+  role_name: "accountant"
+  assigned_by: "550e8400-e29b-41d4-a716-446655440000"
+  assigned_at: "2025-01-15T10:00:00Z"
+  reason: "Назначение главного бухгалтера"

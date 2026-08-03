@@ -1,0 +1,117 @@
+# ============================================
+# Команда: Отменить подписку
+# ============================================
+name: "CancelSubscription"
+description: "Отмена подписки клиента"
+version: "1.0.0"
+
+inputs:
+  - subscription_id:
+      type: uuid
+      required: true
+      description: "ID подписки"
+
+  - user_id:
+      type: uuid
+      required: true
+      description: "ID пользователя, отменяющего подписку"
+
+  - cancel_reason:
+      type: string
+      required: true
+      enum: ["not_used", "too_expensive", "missing_features", "switching_plan", "other"]
+      description: "Причина отмены"
+
+  - cancel_reason_detail:
+      type: string
+      nullable: true
+      max_length: 500
+      description: "Детали причины"
+
+  - cancel_at_period_end:
+      type: boolean
+      default: true
+      description: "Отменить в конце периода (true) или немедленно (false)"
+
+pre_conditions:
+  - "Подписка существует"
+  - "Подписка активна (status IN ('active', 'trial'))"
+  - "У пользователя есть право 'subscriptions.cancel'"
+  - "Подписка не уже отменена"
+
+post_conditions:
+  - "Подписка отменена (или помечена на отмену)"
+  - "Запись в Audit Log"
+  - "Отправлено уведомление клиенту"
+
+process:
+  steps:
+    - name: "ValidateSubscription"
+      check: "subscription.exists AND subscription.status IN ('active', 'trial')"
+      on_fail: "Ошибка: подписка не существует или неактивна"
+
+    - name: "CheckPendingInvoices"
+      check: "SELECT COUNT(*) FROM invoices WHERE subscription_id = '{subscription_id}' AND status IN ('draft', 'sent')"
+      on_fail: "Ошибка: есть неоплаченные счета"
+
+    - name: "ProcessCancellation"
+      action: |
+        IF cancel_at_period_end:
+          UPDATE subscriptions SET
+            cancel_at_period_end = true,
+            canceled_at = now(),
+            updated_at = now()
+          WHERE id = '{subscription_id}'
+        ELSE:
+          UPDATE subscriptions SET
+            status = 'canceled',
+            canceled_at = now(),
+            updated_at = now()
+          WHERE id = '{subscription_id}'
+
+    - name: "CreateRefund"
+      condition: "cancel_at_period_end == false AND has_paid_period"
+      action: "Создать возврат средств за неиспользованный период"
+
+    - name: "UpdateProvider"
+      action: "Отменить подписку в платежной системе"
+
+    - name: "LogAudit"
+      action: "INSERT INTO audit_log"
+
+    - name: "NotifyCustomer"
+      action: "Отправить уведомление об отмене"
+
+outputs:
+  - status:
+      type: string
+      enum: ["success", "failed"]
+
+  - subscription_id:
+      type: uuid
+
+  - effective_cancel_date:
+      type: datetime
+      description: "Дата фактической отмены"
+
+  - refund_amount:
+      type: numeric
+      nullable: true
+
+  - errors:
+      type: array
+      nullable: true
+
+events:
+  on_success:
+    - SubscriptionCanceled.yaml
+  on_failure:
+    - SubscriptionCancelFailed.yaml
+
+example:
+  inputs:
+    subscription_id: "990e8400-e29b-41d4-a716-446655440000"
+    user_id: "550e8400-e29b-41d4-a716-446655440001"
+    cancel_reason: "too_expensive"
+    cancel_reason_detail: "Нашли более дешевое решение"
+    cancel_at_period_end: true

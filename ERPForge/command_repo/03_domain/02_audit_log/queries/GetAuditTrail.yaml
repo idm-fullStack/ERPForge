@@ -1,0 +1,142 @@
+# ============================================
+# Запрос: Получить лог аудита (Audit Trail)
+# ============================================
+name: "GetAuditTrail"
+description: "Получение лога аудита с фильтрацией"
+version: "1.0.0"
+
+inputs:
+  - tenant_id:
+      type: uuid
+      required: true
+      description: "ID клиента"
+
+  - user_id:
+      type: uuid
+      nullable: true
+      description: "Фильтр по пользователю"
+
+  - enterprise_id:
+      type: uuid
+      nullable: true
+      description: "Фильтр по юридическому лицу"
+
+  - event_codes:
+      type: array
+      nullable: true
+      items: { type: string }
+      description: "Фильтр по типам событий"
+      example: ["DOCUMENT_POSTED", "DOCUMENT_CANCELED"]
+
+  - category:
+      type: string
+      nullable: true
+      enum: ["authentication", "authorization", "data_access", "data_modification", "data_export", "system", "financial", "compliance"]
+      description: "Фильтр по категории"
+
+  - severity:
+      type: string
+      nullable: true
+      enum: ["info", "warning", "error", "critical", "audit_required"]
+      description: "Фильтр по уровню важности"
+
+  - date_from:
+      type: datetime
+      nullable: true
+      description: "Дата начала периода"
+
+  - date_to:
+      type: datetime
+      nullable: true
+      description: "Дата конца периода"
+
+  - search:
+      type: string
+      nullable: true
+      description: "Поиск по деталям (текст)"
+
+  - limit:
+      type: integer
+      default: 100
+      min: 1
+      max: 1000
+      description: "Количество записей"
+
+  - offset:
+      type: integer
+      default: 0
+      description: "Смещение для пагинации"
+
+  - sort:
+      type: string
+      enum: ["created_at_desc", "created_at_asc", "severity_desc", "severity_asc"]
+      default: "created_at_desc"
+      description: "Сортировка"
+
+  - include_details:
+      type: boolean
+      default: true
+      description: "Включить детали события"
+
+outputs:
+  - items:
+      type: array
+      description: "Список записей аудита"
+      items:
+        type: object
+        properties:
+          id: { type: uuid }
+          event_code: { type: string }
+          event_name: { type: string }
+          category: { type: string }
+          severity: { type: string }
+          user_id: { type: uuid, nullable: true }
+          user_name: { type: string, nullable: true }
+          tenant_id: { type: uuid }
+          enterprise_id: { type: uuid, nullable: true }
+          enterprise_name: { type: string, nullable: true }
+          ip_address: { type: string }
+          source: { type: string }
+          details: { type: object }
+          created_at: { type: datetime }
+
+  - total:
+      type: integer
+      description: "Общее количество записей (без учета лимита)"
+
+  - pagination:
+      type: object
+      properties:
+        limit: { type: integer }
+        offset: { type: integer }
+        total_pages: { type: integer }
+
+security:
+  - "Доступ только для пользователей с ролью 'admin' или 'auditor'"
+  - "Доступ только к своему tenant_id (кроме суперадминистратора)"
+  - "Логирование самого запроса в аудит"
+
+example_response:
+  items:
+    - id: "da0e8400-e29b-41d4-a716-446655440000"
+      event_code: "DOCUMENT_POSTED"
+      event_name: "Проведение документа"
+      category: "financial"
+      severity: "audit_required"
+      user_id: "550e8400-e29b-41d4-a716-446655440001"
+      user_name: "Иван Петров"
+      tenant_id: "660e8400-e29b-41d4-a716-446655440000"
+      enterprise_id: "aa0e8400-e29b-41d4-a716-446655440000"
+      enterprise_name: "ООО Ромашка"
+      ip_address: "192.168.1.100"
+      source: "web"
+      details:
+        document_id: "ee0e8400-e29b-41d4-a716-446655440000"
+        document_type: "SalesInvoice"
+        amount: 159800.00
+      created_at: "2025-01-15T14:30:00Z"
+  total: 1
+  pagination:
+    limit: 100
+    offset: 0
+    total_pages: 1
