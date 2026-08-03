@@ -1,0 +1,91 @@
+name: Frontend Build
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - '01_frontend/**'
+      - '!**.md'
+  pull_request:
+    branches: [main]
+    paths:
+      - '01_frontend/**'
+
+jobs:
+  build-web:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: '01_frontend/web_client/package-lock.json'
+
+      - name: Install dependencies
+        run: |
+          cd 01_frontend/web_client
+          npm ci
+
+      - name: Build Web Client
+        run: |
+          cd 01_frontend/web_client
+          npm run build
+
+      - name: Upload Web Client artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: web-client
+          path: 01_frontend/web_client/dist/
+
+  build-admin:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: '01_frontend/admin_portal/package-lock.json'
+
+      - name: Install dependencies
+        run: |
+          cd 01_frontend/admin_portal
+          npm ci
+
+      - name: Build Admin Portal
+        run: |
+          cd 01_frontend/admin_portal
+          npm run build
+
+      - name: Upload Admin Portal artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: admin-portal
+          path: 01_frontend/admin_portal/dist/
+
+  build-mobile:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: '01_frontend/mobile_tauri/package-lock.json'
+
+      - name: Install dependencies
+        run: |
+          cd 01_frontend/mobile_tauri
+          npm ci
+
+      - name: Build Mobile (Tauri)
+        run: |
+          cd 01_frontend/mobile_tauri
+          npm run tauri build

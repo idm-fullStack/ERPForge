@@ -1,0 +1,93 @@
+name: Backend Tests
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - '02_backend/**'
+      - '03_domain/**'
+      - '08_contracts/**'
+  pull_request:
+    branches: [main]
+    paths:
+      - '02_backend/**'
+
+jobs:
+  rust-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          components: clippy, rustfmt
+
+      - name: Run Rust tests
+        run: |
+          cd 02_backend/rust_kernel
+          cargo test --verbose
+          cargo clippy -- -D warnings
+          cargo fmt -- --check
+
+  python-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          cd 02_backend/python_services
+          pip install -r requirements.txt
+          pip install schemathesis pytest allure-pytest
+
+      - name: Run Python tests
+        run: |
+          cd 02_backend/python_services
+          pytest --alluredir=allure-results
+
+      - name: Run Schemathesis (API contract testing)
+        run: |
+          schemathesis run \
+            --base-url=http://localhost:8000 \
+            --checks all \
+            --hypothesis-max-examples=50 \
+            08_contracts/web_api/generated/openapi.yaml \
+            --report=schemathesis-report.html
+
+      - name: Upload test reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-reports
+          path: |
+            allure-results/
+            schemathesis-report.html
+
+  security-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install OWASP ZAP
+        run: |
+          docker pull owasp/zap2docker-stable
+
+      - name: Run OWASP ZAP
+        run: |
+          docker run -v $(pwd):/zap/wrk/ owasp/zap2docker-stable \
+            zap-api-scan.py \
+            -t 08_contracts/web_api/generated/openapi.yaml \
+            -f openapi \
+            -r zap-report.html
+
+      - name: Upload ZAP report
+        uses: actions/upload-artifact@v4
+        with:
+          name: zap-report
+          path: zap-report.html

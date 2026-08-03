@@ -1,0 +1,54 @@
+name: SSG Docs Pipeline
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - 'system/**'
+      - 'docs_portal/**'
+      - '**.md'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+jobs:
+  build-docs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install MkDocs and plugins
+        run: |
+          pip install mkdocs mkdocs-material mkdocs-kroki
+
+      - name: Install Structurizr CLI
+        run: |
+          wget -O structurizr-cli.jar https://github.com/structurizr/cli/releases/latest/download/structurizr-cli.jar
+
+      - name: Generate C4 Diagrams
+        run: |
+          java -jar structurizr-cli.jar export \
+            -workspace system/architecture.dsl \
+            -format plantuml \
+            -output docs_portal/docs/diagrams/
+
+      - name: Build MkDocs
+        run: |
+          cd docs_portal
+          mkdocs build
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: './docs_portal/site/'
+
+      - name: Deploy to GitHub Pages
+        uses: actions/deploy-pages@v4

@@ -1,0 +1,47 @@
+
+---
+
+## `.github/workflows/tz-generate.yml`
+
+```yaml
+name: Generate Technical Specification
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'docs/**'
+      - 'mkdocs.tz.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  generate-tz:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install MkDocs and plugins
+        run: |
+          pip install mkdocs mkdocs-material mkdocs-kroki
+
+      - name: Build TZ docs
+        run: |
+          mkdocs build -f mkdocs.tz.yml -d site_tz
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: './site_tz/'
+
+      - name: Deploy to GitHub Pages
+        uses: actions/deploy-pages@v4
