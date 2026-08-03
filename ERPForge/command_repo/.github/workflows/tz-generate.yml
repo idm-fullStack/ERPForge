@@ -1,7 +1,6 @@
 
 ---
 
-## `.github/workflows/tz-generate.yml`
 
 ```yaml
 name: Generate Technical Specification
