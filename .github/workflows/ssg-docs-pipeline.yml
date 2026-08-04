@@ -27,13 +27,13 @@ jobs:
 
       - name: Build MkDocs
         run: |
-          cd ERPForge/command_repo/docs
-          mkdocs build -f mkdocs.tz.yml -d site_tz
+          cd ERPForge/command_repo
+          mkdocs build -f docs/mkdocs.tz.yml -d site_tz
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: './ERPForge/command_repo/docs/site_tz/'
+          path: './ERPForge/command_repo/site_tz/'
 
       - name: Deploy to GitHub Pages
         uses: actions/deploy-pages@v4
