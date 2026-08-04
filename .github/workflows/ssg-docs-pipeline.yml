@@ -4,8 +4,8 @@ on:
   push:
     branches: [main, develop]
     paths:
-      - 'docs/**'
-      - 'mkdocs.tz.yml'
+      - 'ERPForge/command_repo/docs/**'
+      - 'ERPForge/command_repo/mkdocs.tz.yml'
   workflow_dispatch:
 
 permissions:
@@ -30,12 +30,13 @@ jobs:
 
       - name: Build MkDocs
         run: |
+          cd ERPForge/command_repo
           mkdocs build -f mkdocs.tz.yml -d site_tz
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: './site_tz/'
+          path: './ERPForge/command_repo/site_tz/'
 
       - name: Deploy to GitHub Pages
         uses: actions/deploy-pages@v4
