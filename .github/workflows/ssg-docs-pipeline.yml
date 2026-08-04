@@ -27,7 +27,7 @@ jobs:
 
       - name: Install MkDocs and plugins
         run: |
-          pip install mkdocs mkdocs-material mkdocs-kroki
+          pip install mkdocs mkdocs-material mkdocs-kroki-plugin
 
       - name: Install Structurizr CLI
         run: |
