@@ -28,7 +28,7 @@ jobs:
       - name: Build MkDocs
         run: |
           cd ERPForge/command_repo
-          mkdocs build -f docs/mkdocs.tz.yml -d site_tz
+          mkdocs build -f mkdocs.tz.yml -d site_tz
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
