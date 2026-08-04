@@ -2,10 +2,7 @@ name: SSG Docs Pipeline
 
 on:
   push:
-    branches: [main, develop]
-    paths:
-      - 'ERPForge/command_repo/docs/**'
-      - 'ERPForge/command_repo/mkdocs.tz.yml'
+    branches: [main]
   workflow_dispatch:
 
 permissions:
@@ -23,13 +20,7 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-      - name: Debug structure
-        run: |
-         pwd
-         ls -la
-         ls -la ERPForge/
-         ls -la ERPForge/command_repo/
-         
+
       - name: Install MkDocs
         run: |
           pip install mkdocs mkdocs-material
