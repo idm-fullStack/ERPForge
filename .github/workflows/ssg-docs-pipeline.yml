@@ -31,12 +31,12 @@ jobs:
 
       - name: Install Structurizr CLI
         run: |
-         wget https://github.com 
+         wget https://github.com/structurizr/cli/releases/download/v2025.11.09/structurizr-cli.zip
          unzip structurizr-cli-2025.11.09.zip -d structurizr-cli
 
       - name: Generate C4 Diagrams
         run: |
-          java -jar structurizr-cli.jar export \
+          java -jar structurizr-cli/structurizr-cli.jar export \
             -workspace system/architecture.dsl \
             -format plantuml \
             -output docs_portal/docs/diagrams/
