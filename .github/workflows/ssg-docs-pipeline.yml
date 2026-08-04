@@ -33,12 +33,12 @@ jobs:
         run: |
           wget -O structurizr-cli.zip https://github.com/structurizr/cli/releases/latest/download/structurizr-cli.zip
           unzip structurizr-cli.zip -d structurizr-cli
-          chmod +x structurizr-cli/structurizr-cli.jar
+          chmod +x structurizr-cli/structurizr.sh
 
       - name: Generate C4 Diagrams
         run: |
           mkdir -p docs_portal/docs/diagrams/
-          java -jar structurizr-cli/structurizr-cli.jar export \
+          ./structurizr-cli/structurizr.sh export \
             -workspace system/architecture.dsl \
             -format plantuml \
             -output docs_portal/docs/diagrams/
