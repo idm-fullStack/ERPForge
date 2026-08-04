@@ -4,9 +4,8 @@ on:
   push:
     branches: [main, develop]
     paths:
-      - 'command_repo/system/**'
-      - 'command_repo/docs/**'
-      - 'command_repo/mkdocs.tz.yml'
+      - 'docs/**'
+      - 'mkdocs.tz.yml'
   workflow_dispatch:
 
 permissions:
@@ -25,19 +24,18 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: Install MkDocs and plugins
+      - name: Install MkDocs
         run: |
           pip install mkdocs mkdocs-material
 
       - name: Build MkDocs
         run: |
-          cd command_repo
           mkdocs build -f mkdocs.tz.yml -d site_tz
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: './command_repo/site_tz/'
+          path: './site_tz/'
 
       - name: Deploy to GitHub Pages
         uses: actions/deploy-pages@v4
