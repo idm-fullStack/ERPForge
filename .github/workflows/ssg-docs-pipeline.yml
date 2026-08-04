@@ -4,13 +4,13 @@ on:
   push:
     branches: [main, develop]
     paths:
-      - 'system/**'
-      - 'docs_portal/**'
-      - '**.md'
+      - 'command_repo/system/**'
+      - 'command_repo/docs/**'
+      - 'command_repo/mkdocs.tz.yml'
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
   pages: write
   id-token: write
 
@@ -27,31 +27,17 @@ jobs:
 
       - name: Install MkDocs and plugins
         run: |
-          pip install mkdocs mkdocs-material mkdocs-kroki-plugin
-
-      - name: Install Structurizr CLI
-        run: |
-          wget -O structurizr-cli.zip https://github.com/structurizr/cli/releases/latest/download/structurizr-cli.zip
-          unzip structurizr-cli.zip -d structurizr-cli
-          chmod +x structurizr-cli/structurizr.sh
-
-      - name: Generate C4 Diagrams
-        run: |
-          mkdir -p docs_portal/docs/diagrams/
-          ./structurizr-cli/structurizr.sh export \
-            -workspace system/architecture.dsl \
-            -format plantuml \
-            -output docs_portal/docs/diagrams/
+          pip install mkdocs mkdocs-material
 
       - name: Build MkDocs
         run: |
-          cd docs_portal
-          mkdocs build
+          cd command_repo
+          mkdocs build -f mkdocs.tz.yml -d site_tz
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: './docs_portal/site/'
+          path: './command_repo/site_tz/'
 
       - name: Deploy to GitHub Pages
         uses: actions/deploy-pages@v4
