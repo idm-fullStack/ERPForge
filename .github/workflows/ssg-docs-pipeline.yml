@@ -31,8 +31,8 @@ jobs:
 
       - name: Install Structurizr CLI
         run: |
-         wget https://github.com/structurizr/cli/releases/download/v2025.11.09/structurizr-cli.zip
-         unzip structurizr-cli-2025.11.09.zip -d structurizr-cli
+          wget https://github.com
+          unzip structurizr-cli.zip -d structurizr-cli
 
       - name: Generate C4 Diagrams
         run: |
